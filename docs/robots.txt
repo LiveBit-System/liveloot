@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://livebit-system.github.io/liveloot/sitemap.xml
