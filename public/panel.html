@@ -208,15 +208,36 @@
             <legend>מה מסובב</legend>
             <label class="check" for="wh-enabled"><input type="checkbox" id="wh-enabled" name="enabled"><span>הגלגל פעיל</span></label>
             <label class="check" for="wh-onFollow"><input type="checkbox" id="wh-onFollow" name="onFollow"><span>עוקב חדש מסובב את הגלגל (פעם אחת לכל צופה בלייב)</span></label>
-            <div class="field"><span>המתנות שמסובבות (באנגלית, כמו שהן בטיקטוק)</span>
+            <div class="field"><span>המתנות שמסובבות</span>
               <ul class="gift-chips" id="giftChips"></ul>
-              <div class="gift-add">
-                <input id="wh-giftInput" placeholder="למשל Rose" list="giftNames" aria-label="שם מתנה להוספה" autocomplete="off">
-                <button class="btn btn-sm" type="button" id="wh-giftAdd">הוסף מתנה</button>
-              </div>
+              <button class="btn btn-sm gift-pick-btn" type="button" id="wh-giftPick">בחר מתנות</button>
             </div>
-            <datalist id="giftNames"><option value="Rose"><option value="Heart Me"><option value="Finger Heart"><option value="Doughnut"><option value="Perfume"><option value="Galaxy"><option value="Lion"><option value="Universe"></datalist>
             <p class="hint">כל מתנה ברצף נספרת: Rose ×50 נותן 50 סיבובים, אחד אחרי השני. אפשר לעצור את הגלגל בכל רגע.</p>
+          </fieldset>
+          <fieldset>
+            <legend>תורמים גדולים</legend>
+            <p class="hint">מי שתורם יותר מקבל יותר. כל שדה עם 0 כבוי.</p>
+            <div class="donor-row">
+              <label class="field"><span>כל מתנה ששווה לפחות</span>
+                <span class="coin-input"><input type="number" min="0" step="1" name="minCoins" id="wh-minCoins" inputmode="numeric"><em>מטבעות</em></span></label>
+              <button class="btn btn-sm" type="button" data-coins-from="wh-minCoins">לפי מחיר של מתנה</button>
+            </div>
+            <p class="hint">מסובבת את הגלגל, גם אם היא לא ברשימה. למשל לפי Rose (1): כל מתנה בטיקטוק מסובבת.</p>
+            <div class="donor-row">
+              <label class="field"><span>סיבוב על כל</span>
+                <span class="coin-input"><input type="number" min="0" step="1" name="coinsPerSpin" id="wh-coinsPerSpin" inputmode="numeric"><em>מטבעות</em></span></label>
+              <button class="btn btn-sm" type="button" data-coins-from="wh-coinsPerSpin">לפי מחיר של מתנה</button>
+            </div>
+            <p class="hint">יותר מטבעות = יותר סיבובים. למשל 10: מתנה של 100 מטבעות נותנת 10 סיבובים (עד 100 סיבובים למתנה).</p>
+            <div class="donor-row">
+              <label class="field"><span>פרס גדול מובטח ממתנה של</span>
+                <span class="coin-input"><input type="number" min="0" step="1" name="bigAtCoins" id="wh-bigAtCoins" inputmode="numeric"><em>מטבעות</em></span></label>
+              <button class="btn btn-sm" type="button" data-coins-from="wh-bigAtCoins">לפי מחיר של מתנה</button>
+            </div>
+            <p class="hint">מי ששולח מתנה כזאת, הסיבוב הראשון שלו נוחת על "פרס גדול". צריך לסמן לפחות פרס אחד כגדול.</p>
+            <div class="donor-test">
+              <button class="btn btn-sm" type="button" id="wh-testValue">בדיקה: שלח מתנה מדומה</button>
+            </div>
           </fieldset>
           <fieldset>
             <legend>הפרסים על הגלגל</legend>
@@ -499,7 +520,7 @@
           <option value="like">לייקים</option>
         </select>
       </label>
-      <label class="field only-gift"><span>שם מתנה מסוים (באנגלית, לא חובה)</span><input name="giftName" placeholder="Rose, Lion"></label>
+      <div class="field only-gift"><span>מתנה מסוימת (לא חובה)</span><div class="gift-pick-row"><input name="giftName" placeholder="כל מתנה" aria-label="מתנה מסוימת"><button type="button" class="btn btn-sm" data-pick-gift>בחר</button></div></div>
       <label class="field only-gift only-like"><span class="min-label">מינימום מטבעות</span><input name="minCoins" type="number" min="0"></label>
       <label class="field wide"><span>שורה ראשית</span><input name="title"></label>
       <label class="field wide"><span>שורה שנייה</span><input name="subtitle"></label>
@@ -539,6 +560,35 @@
 <script src="overlay/media.js"></script>
 <script src="overlay/followers.js"></script>
 <script src="overlay/wheel.js"></script>
+<dialog class="gift-dialog" id="giftDialog" aria-labelledby="giftDialogTitle">
+  <form method="dialog" class="gift-dialog-inner">
+    <header class="gd-head">
+      <h2 id="giftDialogTitle">בחר מתנות</h2>
+      <button class="gd-x" value="cancel" aria-label="סגור">✕</button>
+    </header>
+    <div class="gd-tools">
+      <input type="search" id="gdSearch" placeholder="חיפוש מתנה (באנגלית)" aria-label="חיפוש מתנה" autocomplete="off">
+      <select id="gdSort" aria-label="מיון">
+        <option value="asc">הכי זולות קודם</option>
+        <option value="desc">הכי יקרות קודם</option>
+        <option value="name">לפי שם</option>
+      </select>
+      <button class="btn btn-sm" type="button" id="gdRefresh">רענן מטיקטוק</button>
+    </div>
+    <p class="gd-note" id="gdNote"></p>
+    <ul class="gd-grid" id="gdGrid"></ul>
+    <div class="gd-manual">
+      <span>לא מוצא מתנה?</span>
+      <input id="gdManual" placeholder="כתוב את השם שלה באנגלית" autocomplete="off" aria-label="שם מתנה ידני">
+      <button class="btn btn-sm" type="button" id="gdManualAdd">הוסף</button>
+    </div>
+    <footer class="gd-foot">
+      <span id="gdCount"></span>
+      <button class="btn" value="cancel">ביטול</button>
+      <button class="btn btn-primary" value="ok" id="gdOk">שמור</button>
+    </footer>
+  </form>
+</dialog>
 <script src="panel.js"></script>
 </body>
 </html>

@@ -79,6 +79,8 @@ const DEFAULT_FOLLOWERS = {
 // גלגל מזל
 const DEFAULT_WHEEL = {
   enabled: true, triggerGifts: ['Rose'], onFollow: false, hideIdle: false,
+  // תורמים גדולים: 0 = כבוי
+  minCoins: 0, coinsPerSpin: 0, bigAtCoins: 0,
   prizes: [
     { id: 'p1', text: 'רק שוטגאן', color: '#F5C542', chance: 20 },
     { id: 'p2', text: 'בלי לבנות', color: '#FF6A3D', chance: 15 },
@@ -247,6 +249,50 @@ const KNOWN_GIFTS = { 5655: { name: 'Rose', diamond_count: 1, type: 1 } };
 let status = { state: 'offline', message: 'לא מחובר', username: config.username, viewers: 0, likes: 0 };
 const feed = [];
 
+// ---------- רשימת המתנות של טיקטוק ----------
+// נמשכת ישר מטיקטוק כשמתחברים ללייב, ונשמרת במחשב כדי שתהיה זמינה גם בלי לייב
+const GIFTS_FILE = path.join(DATA_DIR, 'gifts.json');
+let giftCatalog = [];
+try { giftCatalog = JSON.parse(fs.readFileSync(GIFTS_FILE, 'utf8')).filter(g => g && g.name); } catch {}
+if (!giftCatalog.length) giftCatalog = [{ id: 5655, name: 'Rose', coins: 1, image: '' }];
+const sortCatalog = () => giftCatalog.sort((a, b) => a.coins - b.coins || a.name.localeCompare(b.name));
+function saveCatalog() {
+  sortCatalog();
+  try { fs.writeFileSync(GIFTS_FILE, JSON.stringify(giftCatalog)); } catch (e) { console.error('[gifts]', e.message); }
+  io.emit('gifts', { list: giftCatalog, updated: Date.now() });
+}
+function setCatalogFromTikTok(raw) {
+  const list = (Array.isArray(raw) ? raw : raw?.gifts || []).filter(g => g && g.name);
+  if (!list.length) return 0;
+  const byName = new Map(giftCatalog.map(g => [g.name.toLowerCase(), g]));
+  for (const g of list) {
+    giftList.set(String(g.id), g);
+    byName.set(String(g.name).toLowerCase(), { id: g.id, name: String(g.name).trim(), coins: Number(g.diamond_count ?? g.diamondCount) || 0, image: imgUrl(g.image) || imgUrl(g.icon) || '' });
+  }
+  giftCatalog = [...byName.values()];
+  saveCatalog();
+  return list.length;
+}
+// מתנה שהגיעה בלייב ולא הייתה ברשימה נכנסת אליה לבד
+function learnGift(evt) {
+  if (!evt.gift || /^Gift \d+$/.test(evt.gift)) return;
+  const g = giftCatalog.find(x => x.name.toLowerCase() === evt.gift.toLowerCase());
+  if (g) { if (!g.image && evt.giftImage) { g.image = evt.giftImage; saveCatalog(); } return; }
+  giftCatalog.push({ id: evt.giftId || 0, name: evt.gift, coins: evt.unitCoins || 0, image: evt.giftImage || '' });
+  saveCatalog();
+}
+async function refreshGiftCatalog() {
+  if (!connection) return { ok: false, message: 'צריך להתחבר ללייב כדי למשוך את המתנות מטיקטוק' };
+  try {
+    const n = setCatalogFromTikTok(await connection.fetchAvailableGifts());
+    console.log(`[gifts] loaded ${n} gifts from TikTok`);
+    return n ? { ok: true, count: giftCatalog.length } : { ok: false, message: 'טיקטוק לא החזירה מתנות. נסה שוב בעוד דקה' };
+  } catch (e) {
+    console.error('[gifts] fetch failed:', e?.message || e);
+    return { ok: false, message: 'לא הצלחתי למשוך את המתנות מטיקטוק. נסה שוב בעוד דקה' };
+  }
+}
+
 function setStatus(patch) {
   status = { ...status, ...patch };
   io.emit('status', status);
@@ -274,7 +320,7 @@ function findUser(data) {
   };
   return walk(data, 0) || data?.user || null;
 }
-const imgUrl = img => img?.urlList?.[0] || img?.url?.[0] || '';
+const imgUrl = img => img?.urlList?.[0] || img?.url_list?.[0] || img?.url?.[0] || '';
 const pic = data => { const u = findUser(data); return imgUrl(u?.profilePicture) || imgUrl(u?.avatarThumb) || ''; };
 const userId = data => { const u = findUser(data); return u?.uniqueId || u?.displayId || ''; };
 const displayName = data => { const u = findUser(data); return u?.nickname || u?.uniqueId || u?.displayId || 'צופה'; };
@@ -312,7 +358,8 @@ function fill(text, evt) {
 function matchRule(rule, evt) {
   if (!rule.enabled || rule.trigger !== evt.type) return false;
   if (evt.type === 'gift') {
-    if (rule.giftName && rule.giftName.trim().toLowerCase() !== String(evt.gift).toLowerCase()) return false;
+    // אפשר כמה מתנות מופרדות בפסיק: "Rose, Lion"
+    if (rule.giftName && !giftNames(rule.giftName).includes(String(evt.gift).toLowerCase())) return false;
     if (rule.minCoins && evt.coins < rule.minCoins) return false;
   }
   if (evt.type === 'like' && rule.minCoins && evt.count < rule.minCoins) return false;
@@ -418,12 +465,12 @@ let wheelTimer = null;
 // השהיה: סיבובים חדשים נכנסים לתור ומחכים, ולא מתחילים עד שמחזירים לפעולה
 if (typeof state.wheelPaused !== 'boolean') state.wheelPaused = false;
 const emitWheelState = () => io.emit('wheelState', { paused: state.wheelPaused, queued: wheelQueue.length });
-function spinWheel(evt, times = 1) {
+function spinWheel(evt, times = 1, opt = {}) {
   const w = config.wheel;
   const prizes = (w.prizes || []).filter(p => String(p.text || '').trim() || p.image);
   if (!w.enabled || prizes.length < 2) return;
   const prio = evt.type === 'follow' ? 1 : 0;
-  for (let n = 0; n < times && wheelQueue.length < 500; n++) wheelQueue.push({ evt, prio, seq: Date.now() + n / 100 });
+  for (let n = 0; n < times && wheelQueue.length < 500; n++) wheelQueue.push({ evt: n === 0 && opt.bigFirst ? { ...evt, forceBig: true } : evt, prio, seq: Date.now() + n / 100 });
   runWheelQueue();
   emitWheelState();
 }
@@ -528,10 +575,12 @@ function fireEvents(evt) {
   for (const ev of config.events || []) if (matchEvent(ev, evt)) runEvent(ev, evt);
 }
 const SAMPLE_VIEWERS = ['Player1', 'Gamer1', 'BlueFox', 'NovaX'];
+const giftNames = v => String(v || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+const firstGift = v => String(v || '').split(',')[0].trim();
 function sampleEvt(type = 'gift', ev = {}) {
   const name = SAMPLE_VIEWERS[Math.floor(Math.random() * SAMPLE_VIEWERS.length)];
   const coins = Math.max(1, Number(ev.minCoins) || 1);
-  return { type, name, gift: ev.giftName || 'Rose', count: type === 'like' ? coins : (ev.repeatCombo ? 3 : 1), coins, avatar: '', text: ev.command || '', test: true };
+  return { type, name, gift: firstGift(ev.giftName) || 'Rose', count: type === 'like' ? coins : (ev.repeatCombo ? 3 : 1), coins, avatar: '', text: ev.command || '', test: true };
 }
 function handleEvent(evt) {
   evt.id = Date.now() + Math.random().toString(36).slice(2, 6);
@@ -543,7 +592,20 @@ function handleEvent(evt) {
   if (evt.type === 'gift') updateTopGift(evt);
   if (evt.type === 'follow') addFollower(evt);
   const wt = config.wheel;
-  if (evt.type === 'gift' && (wt.triggerGifts || []).some(g => String(g).trim().toLowerCase() === String(evt.gift).toLowerCase())) spinWheel(evt, Math.max(1, evt.count || 1));
+  if (evt.type === 'gift') {
+    if (!evt.test) learnGift(evt);
+    // מתנה מהרשימה, או כל מתנה ששווה לפחות X מטבעות
+    const named = (wt.triggerGifts || []).some(g => String(g).trim().toLowerCase() === String(evt.gift).toLowerCase());
+    const minC = Number(wt.minCoins) || 0, perSpin = Number(wt.coinsPerSpin) || 0, bigAt = Number(wt.bigAtCoins) || 0;
+    const byValue = minC > 0 && (evt.unitCoins || 0) >= minC;
+    if (named || byValue) {
+      // יותר מטבעות = יותר סיבובים. בלי זה: כל מתנה ברצף = סיבוב
+      let times = perSpin > 0 ? Math.floor((evt.coins || 0) / perSpin) : (evt.count || 1);
+      times = Math.min(Math.max(1, times), 100);
+      // מתנה ענקית: הסיבוב הראשון שלה נוחת על פרס גדול
+      spinWheel(evt, times, { bigFirst: bigAt > 0 && (evt.coins || 0) >= bigAt });
+    }
+  }
   // עוקב מסובב רק פעם אחת בכל לייב, גם אם הוריד עוקב ועקב שוב
   if (evt.type === 'follow' && wt.onFollow) {
     const k = String(evt.uid || evt.name || '').toLowerCase();
@@ -577,7 +639,7 @@ async function connectLive() {
     if (giftType === 1 && !data.repeatEnd) return; // מתנות ברצף: רק בסוף הרצף
     handleEvent({
       type: 'gift', name: displayName(data), uid: userId(data), avatar: pic(data),
-      gift: giftName, count,
+      gift: giftName, giftId: data.giftId, count,
       unitCoins: unit || 1, coins: (unit || 1) * count, // אם המחיר לא ידוע, לפחות לא לפספס את המתנה
       giftImage: imgUrl(d.giftImage) || imgUrl(d.image) || imgUrl(x.image) || ''
     });
@@ -624,6 +686,7 @@ async function connectLive() {
       console.log(`[TikTok] followers: ${state.followers.count}`);
     }
     setStatus({ state: 'live', message: 'מחובר ללייב של ' + at });
+    refreshGiftCatalog(); // ברקע, לא מעכב את החיבור
     startFollowerPoll(owner?.count);
   } catch (err) {
     const name = err?.constructor?.name || '';
@@ -678,6 +741,8 @@ io.on('connection', socket => {
   socket.emit('topGift', { top: state.topGift, previous: null, beaten: false, initial: true });
   socket.emit('followers', { ...state.followers, initial: true });
   socket.emit('wheelHistory', { list: state.wheelHistory, room: state.lastRoomId });
+  socket.emit('gifts', { list: giftCatalog });
+  socket.on('refreshGifts', async (ack) => { const r = await refreshGiftCatalog(); if (typeof ack === 'function') ack(r); });
   socket.emit('wheelState', { paused: state.wheelPaused, queued: wheelQueue.length });
   socket.on('wheelOverlay', () => {
     if (socket.data.wheelOverlay) return;
@@ -694,6 +759,12 @@ io.on('connection', socket => {
   socket.on('test', kind => { if (TEST[kind]) handleEvent({ ...TEST[kind](), test: true }); });
   socket.on('resetTopGift', () => resetTopGift());
   socket.on('clearScreen', () => { clearWheel(); io.emit('clear'); });
+  // בדיקה של "תורמים גדולים": מתנה בשווי מסוים מצופה מדומה
+  socket.on('testGiftValue', g => {
+    const c = giftCatalog.find(x => x.name === g?.name) || { name: 'Gift', coins: Math.max(1, Number(g?.coins) || 1), image: '' };
+    const count = Math.max(1, Math.min(99, Number(g?.count) || 1));
+    handleEvent({ type: 'gift', name: 'BlueFox', uid: 'test', avatar: '', gift: c.name, count, unitCoins: c.coins || 1, coins: (c.coins || 1) * count, giftImage: c.image, test: true });
+  });
   socket.on('testWheel', opt => spinWheel({ name: ['Player1', 'Gamer1', 'BlueFox', 'NovaX'][Math.floor(Math.random() * 4)], test: true, forceBig: !!(opt && opt.big) }));
   socket.on('testUnfollow', () => {
     const f = state.followers;
@@ -722,7 +793,7 @@ io.on('connection', socket => {
     const rule = config.rules.find(r => r.id === id);
     if (!rule) return;
     const sample = rule.trigger === 'gift'
-      ? { type: 'gift', name: 'בדיקה', gift: rule.giftName || 'Rose', count: 1, coins: Math.max(rule.minCoins || 1, 1) }
+      ? { type: 'gift', name: 'בדיקה', gift: firstGift(rule.giftName) || 'Rose', count: 1, coins: Math.max(rule.minCoins || 1, 1) }
       : rule.trigger === 'like' ? { type: 'like', name: 'בדיקה', count: Math.max(rule.minCoins || 1, 1) }
       : { type: rule.trigger, name: 'בדיקה' };
     const evt = { ...sample, id: 't' + Date.now(), time: Date.now(), test: true, rule: rule.name };
@@ -740,48 +811,13 @@ io.on('connection', socket => {
   });
 });
 
-// ---------- ריצה ברקע + הפעלה אוטומטית עם Windows ----------
-// הכלי צריך לרוץ כדי שהווידג'טים ב-LIVE Studio יופיעו. במצב רקע אין חלון שחור שאפשר לסגור בטעות
-const { spawn } = require('child_process');
-const STARTUP_DIR = !APP && process.env.APPDATA ? path.join(process.env.APPDATA, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup') : null;
-const STARTUP_FILE = STARTUP_DIR ? path.join(STARTUP_DIR, 'LiveLoot.vbs') : null;
-// מעבר מהשם הישן: אם ההפעלה האוטומטית הייתה פעילה בשם הקודם, מעבירים אותה לשם החדש
-try {
-  const old = STARTUP_DIR && path.join(STARTUP_DIR, 'LIROY LIVE.vbs');
-  if (old && fs.existsSync(old)) { if (!fs.existsSync(STARTUP_FILE)) fs.renameSync(old, STARTUP_FILE); else fs.unlinkSync(old); }
-} catch (e) { console.error('[bg]', e.message); }
-const LAUNCHER = path.join(ROOT, 'run-background.vbs');
-function launcherScript() {
-  // מחכה שנייה וחצי (כדי שהחלון הקודם ישחרר את הפורט), ומריץ את הכלי בלי חלון. הלוג נכתב ל-data\log.txt
-  const cmd = `cmd /c ""${process.execPath}" server.js >> "data\\log.txt" 2>&1"`;
-  return [
-    'Set sh = CreateObject("WScript.Shell")',
-    'WScript.Sleep 1500',
-    `sh.CurrentDirectory = "${ROOT}"`,
-    `sh.Run "${cmd.replace(/"/g, '""')}", 0, False`,
-    ''
-  ].join('\r\n');
-}
-function writeLauncher() { try { fs.writeFileSync(LAUNCHER, launcherScript(), 'utf8'); } catch (e) { console.error('[bg]', e.message); } }
-function autostartInfo() {
-  return { supported: !!STARTUP_FILE, on: !!(STARTUP_FILE && fs.existsSync(STARTUP_FILE)), background: !process.stdout.isTTY };
-}
-function setAutostart(on) {
-  if (!STARTUP_FILE) return;
-  if (on) fs.writeFileSync(STARTUP_FILE, launcherScript(), 'utf8');
-  else if (fs.existsSync(STARTUP_FILE)) fs.unlinkSync(STARTUP_FILE);
-}
-function moveToBackground() {
-  writeLauncher();
-  io.emit('movingToBackground');
-  setTimeout(() => {
-    spawn('wscript.exe', [LAUNCHER], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
-    process.exit(0);
-  }, 400);
-}
+// באפליקציה אין הפעלה ברקע: היא נפתחת ונסגרת עם החלון
+function autostartInfo() { return { supported: false, on: false, background: false }; }
+function setAutostart() {}
+function moveToBackground() {}
 // הלוג לא גדל בלי סוף
 try { const lf = path.join(DATA_DIR, 'log.txt'); if (fs.existsSync(lf) && fs.statSync(lf).size > 5e6) fs.writeFileSync(lf, ''); } catch {}
-if (process.platform === 'win32' && !APP) writeLauncher();
+
 
 // אם הכלי כבר רץ ברקע, לא מפעילים עוד עותק
 server.on('error', e => {
@@ -794,6 +830,7 @@ server.on('error', e => {
   throw e;
 });
 
+global.__livelootNotice = msg => io.emit('appNotice', msg);
 server.listen(PORT, () => {
   if (global.__livelootReady) global.__livelootReady();
   console.log('');

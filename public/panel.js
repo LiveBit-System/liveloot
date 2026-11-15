@@ -386,7 +386,7 @@ function renderEvents() {
       <div class="row-confirm" hidden><span>למחוק את האירוע?</span><button type="button" class="btn btn-danger btn-sm" data-do="delYes">כן, מחק</button><button type="button" class="btn btn-sm" data-do="delNo">ביטול</button></div>
       <form class="rule-edit" hidden>
         <label class="field"><span>מתי</span><select name="trigger"><option value="gift">מתנה</option><option value="follow">עוקב חדש</option><option value="share">שיתוף</option><option value="like">לייקים</option><option value="chat">פקודה בצ'אט</option></select></label>
-        <label class="field only-gift"><span>שם מתנה מסוים (באנגלית, לא חובה)</span><input name="giftName" placeholder="Rose, Lion"></label>
+        <div class="field only-gift"><span>מתנה מסוימת (לא חובה)</span><div class="gift-pick-row"><input name="giftName" placeholder="כל מתנה" aria-label="מתנה מסוימת"><button type="button" class="btn btn-sm" data-pick-gift>בחר</button></div></div>
         <label class="field only-gift only-like"><span class="min-label">מינימום מטבעות</span><input name="minCoins" type="number" min="0"></label>
         <label class="field only-gift only-like"><span>מקסימום (0 = בלי הגבלה)</span><input name="maxCoins" type="number" min="0"></label>
         <label class="field ev-chat"><span>הפקודה (ריק = כל הודעה)</span><input name="command" placeholder="!מטאור" dir="auto"></label>
@@ -546,26 +546,126 @@ $('#addPrize').addEventListener('click', () => {
 });
 let wheelTimer = null;
 let triggerGifts = [];
+// ---------- רשימת המתנות ובחירת מתנות ----------
+let giftCatalog = [];
+const giftByName = name => giftCatalog.find(g => g.name.toLowerCase() === String(name).trim().toLowerCase());
+const giftImg = (g, cls = '') => g && g.image
+  ? `<img class="${cls}" src="${lvEsc(g.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'gd-noimg ${cls}',textContent:'🎁'}))">`
+  : `<span class="gd-noimg ${cls}">🎁</span>`;
+socket.on('gifts', d => {
+  giftCatalog = d.list || [];
+  renderGiftChips();
+  if ($('#giftDialog').open) renderGiftGrid();
+});
+
 function renderGiftChips() {
   const ul = $('#giftChips');
   ul.innerHTML = triggerGifts.length
-    ? triggerGifts.map((g, i) => `<li class="gift-chip"><span dir="ltr">${lvEsc(g)}</span><button type="button" aria-label="הסר ${lvEsc(g)}" data-i="${i}">✕</button></li>`).join('')
-    : '<li class="hint">עוד אין מתנות. בלי מתנה הגלגל יסתובב רק מעוקבים או מפעולות.</li>';
+    ? triggerGifts.map((g, i) => {
+        const c = giftByName(g);
+        return `<li class="gift-chip">${giftImg(c, 'chip-img')}<span dir="ltr">${lvEsc(g)}</span>${c && c.coins ? `<small class="coin">${c.coins}</small>` : ''}<button type="button" aria-label="הסר ${lvEsc(g)}" data-i="${i}">✕</button></li>`;
+      }).join('')
+    : '<li class="hint">עוד אין מתנות. בלי מתנה הגלגל יסתובב רק מעוקבים, מתורמים גדולים או מפעולות.</li>';
   ul.querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => { triggerGifts.splice(Number(b.dataset.i), 1); renderGiftChips(); saveWheel(); }));
 }
-function addGift() {
-  const inp = $('#wh-giftInput');
-  const g = inp.value.trim();
-  if (!g) return;
-  if (triggerGifts.some(x => x.toLowerCase() === g.toLowerCase())) { toast('המתנה הזאת כבר ברשימה'); return; }
-  triggerGifts.push(g); inp.value = ''; renderGiftChips(); saveWheel();
+
+// חלון אחד לכל המקומות: בחירה של כמה מתנות, או של מתנה אחת (בשביל מחיר)
+const picker = { multi: true, sel: [], done: null };
+function openGiftPicker({ multi = true, selected = [], title = 'בחר מתנות', onDone }) {
+  picker.multi = multi; picker.sel = [...selected]; picker.done = onDone;
+  $('#giftDialogTitle').textContent = title;
+  $('#gdOk').hidden = !multi;
+  $('#gdSearch').value = ''; $('#gdManual').value = '';
+  renderGiftGrid();
+  $('#giftDialog').showModal();
+  setTimeout(() => $('#gdSearch').focus(), 30);
 }
-$('#wh-giftAdd').addEventListener('click', addGift);
-$('#wh-giftInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addGift(); } });
+function renderGiftGrid() {
+  const q = $('#gdSearch').value.trim().toLowerCase();
+  const sort = $('#gdSort').value;
+  let list = giftCatalog.filter(g => !q || g.name.toLowerCase().includes(q));
+  list = [...list].sort(sort === 'desc' ? (a, b) => b.coins - a.coins : sort === 'name' ? (a, b) => a.name.localeCompare(b.name) : (a, b) => a.coins - b.coins);
+  const few = giftCatalog.length < 10;
+  $('#gdNote').textContent = few
+    ? 'הרשימה המלאה של טיקטוק נטענת בפעם הראשונה שאתה מתחבר ללייב. אחרי זה היא נשמרת במחשב.'
+    : `${giftCatalog.length} מתנות מטיקטוק`;
+  $('#gdGrid').innerHTML = list.length ? list.map(g => {
+    const on = picker.sel.some(x => x.toLowerCase() === g.name.toLowerCase());
+    return `<li><button type="button" class="gd-card" aria-pressed="${on}" data-name="${lvEsc(g.name)}">
+      ${giftImg(g, 'gd-img')}<span class="gd-name" dir="ltr">${lvEsc(g.name)}</span><span class="coin">${g.coins || '?'}</span></button></li>`;
+  }).join('') : `<li class="gd-empty">לא מצאתי "${lvEsc(q)}". אפשר להוסיף אותה בשם למטה.</li>`;
+  $('#gdCount').textContent = picker.multi ? (picker.sel.length ? `נבחרו ${picker.sel.length}` : 'לא נבחרו מתנות') : 'לחץ על מתנה';
+}
+$('#gdGrid').addEventListener('click', e => {
+  const b = e.target.closest('.gd-card'); if (!b) return;
+  const name = b.dataset.name;
+  if (!picker.multi) { $('#giftDialog').close(); picker.done && picker.done([name], giftByName(name)); return; }
+  const i = picker.sel.findIndex(x => x.toLowerCase() === name.toLowerCase());
+  if (i >= 0) picker.sel.splice(i, 1); else picker.sel.push(name);
+  renderGiftGrid();
+});
+$('#gdSearch').addEventListener('input', renderGiftGrid);
+$('#gdSort').addEventListener('change', renderGiftGrid);
+function addManualGift() {
+  const name = $('#gdManual').value.trim(); if (!name) return;
+  $('#gdManual').value = '';
+  if (!picker.multi) { $('#giftDialog').close(); picker.done && picker.done([name], giftByName(name)); return; }
+  if (!picker.sel.some(x => x.toLowerCase() === name.toLowerCase())) picker.sel.push(name);
+  $('#gdSearch').value = name; renderGiftGrid();
+}
+$('#gdManualAdd').addEventListener('click', addManualGift);
+$('#gdManual').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addManualGift(); } });
+$('#gdOk').addEventListener('click', e => { e.preventDefault(); $('#giftDialog').close(); picker.done && picker.done(picker.sel); });
+$('#gdRefresh').addEventListener('click', () => {
+  const b = $('#gdRefresh'); b.disabled = true; b.textContent = 'מושך מטיקטוק...';
+  socket.emit('refreshGifts', r => {
+    b.disabled = false; b.textContent = 'רענן מטיקטוק';
+    toast(r && r.ok ? `נטענו ${r.count} מתנות` : (r && r.message) || 'לא הצלחתי');
+  });
+});
+
+$('#wh-giftPick').addEventListener('click', () => openGiftPicker({
+  selected: triggerGifts, title: 'המתנות שמסובבות את הגלגל',
+  onDone: list => { triggerGifts = list; renderGiftChips(); saveWheel(); }
+}));
+// "לפי מחיר של מתנה": בוחרים מתנה והמחיר שלה נכנס לשדה
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-coins-from]'); if (!b) return;
+  const input = document.getElementById(b.dataset.coinsFrom);
+  openGiftPicker({ multi: false, title: 'בחר מתנה לפי המחיר שלה', onDone: (n, g) => {
+    if (!g || !g.coins) return toast('לא ידוע המחיר של המתנה הזאת');
+    input.value = g.coins; input.dispatchEvent(new Event('input', { bubbles: true }));
+    toast(`${g.name}: ${g.coins} מטבעות`);
+  } });
+});
+// שדה "שם מתנה" בהתראות ובפעולות: כפתור בחירה לידו
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pick-gift]'); if (!b) return;
+  const input = b.parentElement.querySelector('input[name=giftName]');
+  const cur = input.value.split(',').map(x => x.trim()).filter(Boolean);
+  openGiftPicker({ selected: cur, title: 'בחר מתנות', onDone: list => {
+    input.value = list.join(', ');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  } });
+});
+$('#wh-testValue').addEventListener('click', () => {
+  const w = { ...config.wheel, ...wheelPatch() };
+  if (!wheelForm.elements.enabled.checked) return toast('קודם תסמן "הגלגל פעיל"');
+  openGiftPicker({ multi: false, title: 'איזו מתנה הצופה המדומה שולח?', onDone: (n, g) => {
+    socket.emit('testGiftValue', { name: n[0], coins: g ? g.coins : 1, count: 1 });
+    const c = g ? g.coins : 1;
+    const named = (w.triggerGifts || []).some(x => x.toLowerCase() === n[0].toLowerCase());
+    const byVal = +w.minCoins > 0 && c >= +w.minCoins;
+    if (!named && !byVal) return toast(`${n[0]} (${c}) לא מסובבת: היא לא ברשימה וזולה מהמינימום`);
+    const spins = +w.coinsPerSpin > 0 ? Math.min(100, Math.max(1, Math.floor(c / +w.coinsPerSpin))) : 1;
+    toast(`${n[0]} (${c} מטבעות) = ${spins} סיבובים${+w.bigAtCoins > 0 && c >= +w.bigAtCoins ? ', הראשון פרס גדול' : ''}`);
+  } });
+});
 function wheelPatch() {
   const patch = { prizes, triggerGifts };
   for (const f of wheelForm.elements) {
-    if (!f.name || f.id === 'wh-giftInput') continue;
+    if (!f.name) continue;
     patch[f.name] = f.type === 'checkbox' ? f.checked : f.value;
   }
   return patch;
@@ -576,7 +676,7 @@ function saveWheel() {
   clearTimeout(wheelTimer);
   wheelTimer = setTimeout(() => { socket.emit('saveConfig', { wheel: patch }); $('#wheelSaved').textContent = 'נשמר. הגלגל בלייב התעדכן.'; }, 400);
 }
-wheelForm.addEventListener('input', e => { if (e.target.closest('#prizeList') || e.target.id === 'wh-giftInput') return; saveWheel(); });
+wheelForm.addEventListener('input', e => { if (e.target.closest('#prizeList')) return; saveWheel(); });
 wheelForm.addEventListener('submit', e => e.preventDefault());
 function fillWheelForm(w) {
   for (const el of wheelForm.elements) {
@@ -853,3 +953,13 @@ fetch('/api/sounds').then(r => r.json()).then(list => {
 }).catch(() => {});
 
 showView(location.hash.slice(1) || 'live');
+
+// ---------- הודעות מהאפליקציה (עדכון גרסה) ----------
+socket.on('appNotice', n => {
+  if (!n || n.kind !== 'update' || document.getElementById('updateBar')) return;
+  const bar = document.createElement('div');
+  bar.id = 'updateBar'; bar.className = 'update-bar'; bar.setAttribute('role', 'status');
+  bar.innerHTML = `<b>גרסה חדשה של LiveLoot מוכנה (${lvEsc(n.version || '')})</b><span>היא תותקן לבד בפעם הבאה שתסגור ותפתח את האפליקציה. לא צריך לעשות כלום.</span><button type="button" aria-label="סגור">✕</button>`;
+  bar.querySelector('button').addEventListener('click', () => bar.remove());
+  document.body.appendChild(bar);
+});

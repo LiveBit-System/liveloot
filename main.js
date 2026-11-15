@@ -4,6 +4,8 @@
 const { app, BrowserWindow, shell, dialog, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
+let autoUpdater = null;
+try { ({ autoUpdater } = require('electron-updater')); } catch {}
 
 const PORT = 4777;
 const PANEL = `http://localhost:${PORT}/`;
@@ -81,7 +83,24 @@ app.whenReady().then(async () => {
     return;
   }
   createWindow();
+  checkForUpdates();
 });
 
+// עדכונים אוטומטיים מ-GitHub: מורידים ברקע, ומתקינים כשסוגרים את האפליקציה
+function checkForUpdates() {
+  if (!autoUpdater || !app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-available', i => console.log('[update] available', i.version));
+  autoUpdater.on('update-downloaded', i => {
+    console.log('[update] downloaded', i.version);
+    if (global.__livelootNotice) global.__livelootNotice({ kind: 'update', version: i.version });
+  });
+  autoUpdater.on('error', e => console.log('[update] error', e && e.message));
+  const run = () => autoUpdater.checkForUpdates().catch(e => console.log('[update] check failed', e && e.message));
+  setTimeout(run, 8000);
+  setInterval(run, 3 * 60 * 60 * 1000); // בלייב ארוך, בודק שוב כל 3 שעות
+}
+
 // סגירת החלון סוגרת את כל הכלי
-app.on('window-all-closed', () => app.exit(0));
+app.on('window-all-closed', () => app.quit());
