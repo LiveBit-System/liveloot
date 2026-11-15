@@ -1,7 +1,7 @@
 {
   "name": "liveloot",
   "productName": "LiveLoot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "LiveLoot - widgets and lucky wheel for TikTok LIVE",
   "author": "Liroy",
   "main": "main.js",
@@ -65,10 +65,17 @@
         "repo": "liveloot",
         "releaseType": "release"
       }
+    ],
+    "extraResources": [
+      {
+        "from": "LICENSE",
+        "to": "LICENSE.txt"
+      }
     ]
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/nirzoz-studio/liveloot.git"
-  }
+  },
+  "license": "AGPL-3.0-only"
 }

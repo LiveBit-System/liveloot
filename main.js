@@ -29,6 +29,7 @@ function startServer() {
   process.env.LIVELOOT_APP = '1';
   process.env.LIVELOOT_PORT = String(PORT);
   process.env.LIVELOOT_DATA = data;
+  process.env.LIVELOOT_VERSION = app.getVersion();
   // לוג לקובץ, כדי שיהיה מה לבדוק אם משהו לא עובד אצל משתמש
   try {
     const logFile = path.join(data, 'log.txt');

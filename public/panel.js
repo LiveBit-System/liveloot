@@ -963,3 +963,14 @@ socket.on('appNotice', n => {
   bar.querySelector('button').addEventListener('click', () => bar.remove());
   document.body.appendChild(bar);
 });
+
+// ---------- תנאי שימוש (פעם אחת) וגרסה ----------
+socket.on('appInfo', i => {
+  if (i.version) $('#appVersion').textContent = i.version;
+  const d = $('#termsDialog');
+  if (!i.accepted && i.version && !d.open) d.showModal();   // רק באפליקציה (יש גרסה)
+  if (i.accepted && d.open) d.close();
+});
+$('#termsDialog').addEventListener('cancel', e => e.preventDefault()); // לא נסגר ב-Esc בלי אישור
+$('#termsCheck').addEventListener('change', e => { $('#termsOk').disabled = !e.target.checked; });
+$('#termsOk').addEventListener('click', () => socket.emit('acceptTerms'));

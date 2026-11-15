@@ -119,6 +119,7 @@ function writeJson(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 }
 
+const TERMS_VERSION = '2026-11';
 let config = { ...DEFAULT_CONFIG, ...readJson(CONFIG_FILE, {}) };
 config.topGift = { ...DEFAULT_TOPGIFT, ...(config.topGift || {}) };
 // פעולות ואירועים: פעולה = מה קורה על המסך, אירוע = מתי זה קורה. האפקטים הישנים הופכים לפעולות + אירועים
@@ -196,6 +197,7 @@ app.post('/api/wheel-image', express.raw({ type: 'image/*', limit: '8mb' }), (re
 // מסך הפתיחה מופיע רק בפעם הראשונה. אחר כך נפתח ישר הפאנל (ו-/home מציג אותו שוב)
 app.get('/', (req, res) => /(^|;\s*)ll_seen=1/.test(req.headers.cookie || '') ? res.redirect('/panel.html') : res.sendFile(path.join(ROOT, 'public/home.html')));
 app.get('/home', (req, res) => res.sendFile(path.join(ROOT, 'public/home.html')));
+app.get('/legal', (req, res) => res.sendFile(path.join(ROOT, 'public/legal.html')));
 // קישורים קצרים ל-OBS / TikTok LIVE Studio
 app.get('/alerts', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/alerts.html')));
 app.get('/topgift', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/topgift.html')));
@@ -800,6 +802,9 @@ io.on('connection', socket => {
     pushFeed(evt);
     sendAlert(rule, evt);
   });
+  // תנאי השימוש: מאשרים פעם אחת (ושוב רק אם הגרסה שלהם משתנה)
+  socket.emit('appInfo', { version: process.env.LIVELOOT_VERSION || '', terms: TERMS_VERSION, accepted: config.termsAccepted === TERMS_VERSION });
+  socket.on('acceptTerms', () => { config.termsAccepted = TERMS_VERSION; saveConfig(); io.emit('appInfo', { version: process.env.LIVELOOT_VERSION || '', terms: TERMS_VERSION, accepted: true }); });
   socket.on('saveConfig', patch => {
     if (patch.topGift) patch.topGift = { ...config.topGift, ...patch.topGift };
     if (patch.followers) patch.followers = { ...config.followers, ...patch.followers };

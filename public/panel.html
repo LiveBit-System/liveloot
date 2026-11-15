@@ -491,6 +491,14 @@
         <p class="hint">המפתח נשמר רק אצלנו ולא מוצג לאף אחד.</p>
         <button class="btn btn-primary" id="saveKey">שמור מפתח</button>
       </div>
+      <div class="panel narrow about-box">
+        <h2>על LiveLoot</h2>
+        <p class="hint">גרסה <b id="appVersion" dir="ltr">-</b>. חינמית וקוד פתוח (AGPL-3.0). לא קשורה לטיקטוק.</p>
+        <div class="tg-actions">
+          <a class="btn" href="/legal" target="_blank" rel="noopener">תנאי שימוש ופרטיות</a>
+          <a class="btn" href="https://github.com/nirzoz-studio/liveloot" target="_blank" rel="noopener">קוד המקור</a>
+        </div>
+      </div>
     </section>
 
   </main>
@@ -588,6 +596,20 @@
       <button class="btn btn-primary" value="ok" id="gdOk">שמור</button>
     </footer>
   </form>
+</dialog>
+<dialog class="terms-dialog" id="termsDialog" aria-labelledby="termsTitle">
+  <div class="terms-inner">
+    <img src="/icon.png" alt="" class="terms-icon">
+    <h2 id="termsTitle">לפני שמתחילים</h2>
+    <ul class="terms-list">
+      <li><b>LiveLoot חינמית ולא קשורה לטיקטוק.</b> היא ניתנת כמו שהיא, בלי אחריות.</li>
+      <li><b>הפרסים בגלגל באחריות שלך.</b> אתה מבטיח אותם לצופים, ואתה צריך לבדוק שמותר לך לפי הכללים של טיקטוק והחוק.</li>
+      <li><b>שום מידע לא נשלח אלינו.</b> הכל נשמר רק במחשב שלך.</li>
+    </ul>
+    <p class="hint"><a href="/legal" target="_blank" rel="noopener">לקריאת תנאי השימוש ומדיניות הפרטיות המלאים</a></p>
+    <label class="check" for="termsCheck"><input type="checkbox" id="termsCheck"><span>קראתי ואני מסכים לתנאי השימוש</span></label>
+    <button class="btn btn-primary" type="button" id="termsOk" disabled>מתחילים</button>
+  </div>
 </dialog>
 <script src="panel.js"></script>
 </body>
