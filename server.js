@@ -695,6 +695,7 @@ async function connectLive() {
     let message = 'החיבור נכשל: ' + (err?.message || err);
     if (name === 'UserOfflineError') message = at + ' לא בלייב כרגע. תעלה ללייב ואז תתחבר.';
     if (name === 'InvalidResponseCompositeError') message = 'לא מצאתי לייב פעיל של ' + at + '. תבדוק שאתה בלייב ושהשם נכון.';
+    if (/401|API Key is invalid/i.test(err?.message || '')) message = 'מפתח Euler בהגדרות לא תקין. כנס להגדרות, תמחק את המפתח ולחץ "שמור מפתח", או תדביק מפתח נכון.';
     if (name === 'SignatureRateLimitError') message = 'שירות החתימה עמוס. נסה שוב בעוד דקה, או הוסף מפתח Euler בהגדרות.';
     console.error('[TikTok] connect failed:', name, err?.message);
     connection = null;
