@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>LiveLoot - Top Gift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Fredoka:wght@500;600;700&family=Noto+Sans+Hebrew:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/overlay/overlay.css">
+<style>html, body { margin: 0; background: transparent; overflow: hidden; width: 100vw; height: 100vh; }</style>
+</head>
+<body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/overlay/sound.js"></script>
+<script src="/overlay/alerts.js"></script>
+<script src="/overlay/topgift.js"></script>
+<script>
+  // מומלץ ב-OBS: Browser Source ברוחב 600 וגובה 520
+  const view = TopGiftView(document.body, { muted: new URLSearchParams(location.search).has('muted') });
+  const socket = io(location.pathname.startsWith('/w/') ? { query: { key: location.pathname.split('/')[2] } } : undefined);
+  socket.on('config', c => view.setSettings(c.topGift));
+  socket.on('topGift', d => view.setTop(d));
+</script>
+</body>
+</html>

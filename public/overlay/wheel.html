@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>LiveLoot - גלגל מזל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Noto+Sans+Hebrew:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/overlay/overlay.css">
+<style>html, body { margin: 0; background: transparent; overflow: hidden; width: 100vw; height: 100vh; }</style>
+</head>
+<body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/overlay/sound.js"></script>
+<script src="/overlay/alerts.js"></script>
+<script src="/overlay/wheel.js"></script>
+<script>
+  // מומלץ ב-LIVE Studio: רזולוציה 700 על 700
+  const socket = io(location.pathname.startsWith('/w/') ? { query: { key: location.pathname.split('/')[2] } } : undefined);
+  // הגלגל בלייב מודיע לשרת מתי הפרס מופיע ומתי הסיבוב נגמר. ככה רשימת הזוכים בפאנל
+  // מתעדכנת בדיוק כשהצופים רואים, והסיבוב הבא מתחיל רק כשהקודם באמת נגמר
+  const view = WheelView(document.body, {
+    muted: new URLSearchParams(location.search).has('muted'),
+    onResult: s => s.id && socket.emit('wheelResult', s.id),
+    onDone: s => s.id && socket.emit('wheelDone', s.id)
+  });
+  socket.on('connect', () => socket.emit('wheelOverlay'));
+  socket.on('config', c => view.setSettings(c.wheel || {}));
+  socket.on('wheelSpin', s => view.enqueue(s));
+  socket.on('clear', () => view.clear());
+</script>
+</body>
+</html>

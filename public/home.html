@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LiveLoot</title>
+<meta name="description" content="התראות, גלגל מזל, פעולות ואירועים, Top Gift ומונה עוקבים ללייב בטיקטוק. בעברית, חינם, עובד עם TikTok LIVE Studio.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'><rect x='3' y='7' width='30' height='25' rx='6' fill='%237C4DFF'/><rect x='15' y='7' width='6' height='25' fill='%23FFD23F'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/lp/scrollcraft.css">
+<link rel="stylesheet" href="/overlay/overlay.css">
+<style>
+  :root {
+    --sc-canvas: #0C0913; --sc-surface: #14101D;
+    --sc-ink: #F2EFF9; --sc-ink-soft: #A7A0BC;
+    --sc-accent: #FFD23F; --sc-accent-ink: #241600;
+    --sc-font-display: "Rubik", system-ui, sans-serif;
+    --sc-font-text: "Rubik", system-ui, sans-serif;
+    --raise: #1C1728; --line: #2C2540; --line-soft: #211B30; --faint: #7A7392;
+    --grape: #7C4DFF; --grape-soft: rgba(124, 77, 255, .16); --pop: #FF3E8A; --fizz: #22E5C7; --ink-deep: #200A3A;
+    --side: 232px;
+  }
+  html { background: var(--sc-canvas); }
+  body { margin: 0; background: var(--sc-canvas); color: var(--sc-ink); font-family: var(--sc-font-text); -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--sc-accent); outline-offset: 3px; }
+
+  /* ---------- כרום של האפליקציה: סרגל צד = ניווט ---------- */
+  .side {
+    position: fixed; inset-block: 0; inset-inline-start: 0; width: var(--side); z-index: 40;
+    display: flex; flex-direction: column; gap: 2px; padding: 20px 14px 16px;
+    background: rgba(20, 16, 29, .92); backdrop-filter: blur(14px); border-inline-end: 1px solid var(--line-soft);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; direction: ltr; justify-content: flex-end; font-weight: 900; font-size: 22px; letter-spacing: -.01em; padding: 2px 8px 18px; margin-bottom: 8px; border-bottom: 1px solid var(--line-soft); text-decoration: none; }
+  .brand svg { width: 34px; height: 34px; }
+  .nav-group { margin: 14px 12px 6px; font-size: 12px; font-weight: 600; color: var(--faint); }
+  .nav a {
+    position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px;
+    color: var(--sc-ink-soft); text-decoration: none; font-weight: 500; font-size: 15px; transition: background .15s, color .15s;
+  }
+  .nav a svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .nav a:hover { background: var(--raise); color: var(--sc-ink); }
+  .nav a[aria-current="true"] { background: var(--grape-soft); color: #fff; font-weight: 600; }
+  .nav a[aria-current="true"] svg { color: var(--sc-accent); }
+  .nav a[aria-current="true"]::before { content: ""; position: absolute; inset-inline-start: -14px; top: 9px; bottom: 9px; width: 4px; border-radius: 4px 0 0 4px; background: var(--sc-accent); }
+  .side-foot { margin-top: auto; display: grid; gap: 8px; }
+  .demo-note { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--raise); color: var(--sc-ink-soft); font-size: 13px; }
+  .demo-note i { width: 8px; height: 8px; border-radius: 50%; background: var(--fizz); box-shadow: 0 0 0 4px rgba(34, 229, 199, .15); flex: none; }
+  .side-login { text-align: center; padding: 10px; border-radius: 12px; border: 1px solid var(--line); font-weight: 600; font-size: 14px; text-decoration: none; color: var(--sc-ink-soft); }
+  .side-login:hover { color: var(--sc-ink); border-color: var(--grape); }
+  .side-panel { background: var(--sc-accent); border-color: var(--sc-accent); color: var(--sc-accent-ink); font-weight: 800; }
+  .side-panel:hover { background: #FFDC63; color: var(--sc-accent-ink); }
+  @media (max-width: 900px) { .side-foot { display: flex; margin: 0 auto 0 0; } .side-foot .demo-note { display: none; } .side-panel { padding: 7px 12px; white-space: nowrap; } }
+
+  main { margin-inline-start: var(--side); }
+  .scene-wrap { width: min(1180px, 100%); margin-inline: auto; padding-inline: clamp(20px, 4vw, 56px); }
+
+  /* ---------- טיפוגרפיה בסגנון האפליקציה ---------- */
+  .h-app { margin: 0; font-weight: 800; font-size: clamp(2rem, 1.4rem + 2.2vw, 3.1rem); line-height: 1.08; letter-spacing: -.02em; text-wrap: balance; }
+  .h-sec { margin: 0; font-weight: 800; font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.3rem); line-height: 1.12; letter-spacing: -.015em; text-wrap: balance; }
+  .lede { margin: 0; color: var(--sc-ink-soft); font-size: clamp(1rem, .96rem + .25vw, 1.125rem); line-height: 1.65; max-width: 52ch; text-wrap: pretty; }
+  .kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--sc-ink-soft); padding: 5px 12px; border-radius: 999px; background: var(--raise); border: 1px solid var(--line-soft); }
+  .kicker b { width: 8px; height: 8px; border-radius: 50%; background: var(--pop); animation: blink 1.4s infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px;
+    border-radius: 14px; font: inherit; font-weight: 700; font-size: 16px; cursor: pointer; text-decoration: none;
+    border: 1px solid var(--line); background: var(--raise); color: var(--sc-ink); transition: background .15s, border-color .15s, transform .08s, box-shadow .08s;
+  }
+  .btn:hover { border-color: #3B3254; background: #241E33; }
+  .btn-volt { background: var(--sc-accent); border-color: var(--sc-accent); color: var(--sc-accent-ink); box-shadow: 0 4px 0 #B8900F; }
+  .btn-volt:hover { background: #FFDC63; border-color: #FFDC63; }
+  .btn-volt:active { transform: translateY(2px); box-shadow: 0 2px 0 #B8900F; }
+  .btn-discord { background: var(--sc-accent); border-color: var(--sc-accent); color: var(--sc-accent-ink); box-shadow: 0 4px 0 #B8900F; min-height: 54px; font-size: 17px; }
+  .btn-discord:hover { background: #FFDC63; border-color: #FFDC63; }
+  .btn-discord:active { transform: translateY(2px); box-shadow: 0 2px 0 #B8900F; }
+  .btn svg { width: 22px; height: 22px; flex: none; }
+
+  /* ---------- מסך הלייב (טלפון) ---------- */
+  .phone {
+    position: relative; width: 100%; aspect-ratio: 9 / 16; border-radius: 34px; padding: 11px; background: #06040A;
+    box-shadow: 0 0 0 1px var(--line), 0 40px 80px rgba(0,0,0,.55);
+  }
+  .screen {
+    position: relative; width: 100%; height: 100%; border-radius: 25px; overflow: hidden; isolation: isolate;
+    background:
+      radial-gradient(90% 55% at 50% 105%, rgba(34, 229, 199, .22), transparent 70%),
+      radial-gradient(70% 45% at 15% 5%, rgba(255, 62, 138, .22), transparent 70%),
+      linear-gradient(180deg, #2A1650, #120A22);
+  }
+  .screen .live-tag { position: absolute; top: 12px; inset-inline-end: 12px; z-index: 6; background: var(--pop); color: #fff; font-weight: 800; font-size: 11px; padding: 2px 9px; border-radius: 6px; letter-spacing: .02em; }
+  .screen .viewers { position: absolute; top: 12px; inset-inline-start: 12px; z-index: 6; background: rgba(0,0,0,.35); font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 6px; }
+  .streamer { position: absolute; inset-inline: 0; bottom: 0; height: 46%; z-index: 0; }
+  .streamer::before { content: ""; position: absolute; left: 50%; bottom: -8%; width: 70%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50% 50% 0 0; background: linear-gradient(180deg, #3B2470, #24154A); }
+  .streamer::after { content: ""; position: absolute; left: 50%; bottom: 46%; width: 30%; aspect-ratio: 1; transform: translateX(-50%); border-radius: 50%; background: linear-gradient(180deg, #4A2E86, #33206A); }
+  .chat { position: absolute; bottom: 12px; inset-inline-end: 12px; inset-inline-start: 28%; z-index: 5; display: grid; gap: 5px; font-size: 12px; }
+  .chat p { margin: 0; padding: 4px 9px; border-radius: 11px; background: rgba(0,0,0,.38); width: fit-content; max-width: 100%; line-height: 1.4; animation: chat-in .35s ease-out; }
+  .chat b { color: var(--sc-accent); font-weight: 700; }
+  @keyframes chat-in { from { opacity: 0; transform: translateY(8px); } }
+  .ov { position: absolute; top: 0; left: 50%; width: 1920px; height: 1080px; transform-origin: top center; z-index: 3; pointer-events: none; }
+  .ov-full { position: absolute; inset: 0; width: 1920px; height: 1080px; transform-origin: top right; z-index: 4; pointer-events: none; right: 0; left: auto; }
+
+  /* ---------- סצנה 1: פתיחה ---------- */
+  .hero { position: relative; min-height: 100svh; display: grid; align-items: center; overflow: hidden; }
+  .hero-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(32px, 5vw, 72px); align-items: center; padding-block: 72px; }
+  .hero-copy { display: grid; gap: 22px; justify-items: start; }
+  .hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+  .note { color: var(--faint); font-size: 14px; }
+  .facts { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .facts li { font-size: 13px; font-weight: 600; color: var(--sc-ink-soft); padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line-soft); background: rgba(20,16,29,.6); }
+  .hero-stage { position: relative; justify-self: center; width: min(340px, 100%); }
+  .hero-glow { position: absolute; inset: -30% -40%; z-index: -1; background: radial-gradient(closest-side, rgba(124, 77, 255, .35), transparent 70%); }
+  .hero-grid-bg { position: absolute; inset: 0; z-index: -2; opacity: .5;
+    background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 48px 48px; -webkit-mask-image: radial-gradient(70% 60% at 60% 45%, #000, transparent); mask-image: radial-gradient(70% 60% at 60% 45%, #000, transparent); }
+  /* מדבקות בקדמת התמונה: זזות מהר יותר מהטלפון */
+  .sticker {
+    position: absolute; z-index: 8; font-weight: 900; font-size: 15px; color: var(--ink-deep); white-space: nowrap;
+    padding: 6px 14px 8px; border: 4px solid var(--ink-deep); border-radius: 14px; box-shadow: 0 6px 0 var(--ink-deep);
+  }
+  .sticker.s1 { background: var(--sc-accent); top: 14%; inset-inline-end: -26%; rotate: 6deg; }
+  .sticker.s2 { background: var(--fizz); bottom: 30%; inset-inline-start: -30%; rotate: -5deg; }
+  .sticker.s3 { background: var(--pop); color: #fff; bottom: 8%; inset-inline-end: -18%; rotate: 3deg; }
+
+  /* ---------- סצנה 2: התראות (נעוץ) ---------- */
+  .alerts-stage { display: grid; align-items: center; }
+  .alerts-grid { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: clamp(28px, 4vw, 64px); align-items: center; }
+  .feed-card { background: var(--sc-surface); border: 1px solid var(--line-soft); border-radius: 20px; padding: 20px; display: grid; gap: 14px; }
+  .feed-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .feed-head h3 { margin: 0; font-size: 16px; font-weight: 700; }
+  .feed-head span { font-size: 12px; color: var(--faint); }
+  .feed { list-style: none; margin: 0; padding: 0; display: grid; }
+  .feed li { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; padding: 10px 2px; border-top: 1px solid var(--line-soft); opacity: .28; transition: opacity .35s; }
+  .feed li.on { opacity: 1; }
+  .feed .ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); }
+  .feed .ico svg { width: 16px; height: 16px; }
+  .feed b { font-size: 14px; font-weight: 700; display: block; }
+  .feed small { color: var(--sc-ink-soft); font-size: 13px; }
+  .feed em { font-style: normal; color: var(--sc-accent); font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .alerts-copy { display: grid; gap: 16px; align-content: center; }
+  .alerts-phone { width: min(300px, 100%); justify-self: center; }
+
+  /* ---------- סצנה 3: פעולות ואירועים ---------- */
+  .ae { padding-block: clamp(80px, 12vh, 140px); }
+  .ae-grid { display: grid; grid-template-columns: 1fr minmax(240px, 300px); gap: clamp(28px, 4vw, 64px); align-items: center; }
+  .ae-copy { display: grid; gap: 16px; }
+  .builder { margin-top: 10px; background: var(--sc-surface); border: 1px solid var(--line-soft); border-radius: 20px; padding: 20px; display: grid; gap: 14px; max-width: 560px; }
+  .builder-row { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; }
+  .builder-row > span { font-size: 13px; font-weight: 700; color: var(--faint); }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button {
+    font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer;
+    background: var(--raise); color: var(--sc-ink-soft); border: 1px solid var(--line);
+  }
+  .seg button[aria-pressed="true"] { background: var(--grape-soft); color: #fff; border-color: var(--grape); }
+  .builder-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+  .builder-foot small { color: var(--faint); font-size: 13px; }
+
+  /* ---------- סצנה 4: הארגז (שיא) ---------- */
+  .crate-stage { display: grid; grid-template-rows: auto 1fr auto; padding-block: 56px 28px; }
+  .crate-head { text-align: center; display: grid; gap: 10px; justify-items: center; }
+  .crate-head .lede { text-align: center; max-width: 44ch; }
+  .crate-box { position: relative; width: min(780px, 96%, 74vh); aspect-ratio: 1; justify-self: center; align-self: center; }
+  .crate-box .wheel-root { position: absolute; inset: 0; }
+  .crate-box.charging .wheel-root { animation: crate-charge .09s linear infinite; }
+  @keyframes crate-charge {
+    0% { transform: translate(calc(var(--amp) * -1px), 0) rotate(calc(var(--amp) * -.5deg)); }
+    50% { transform: translate(calc(var(--amp) * 1px), calc(var(--amp) * -.6px)) rotate(calc(var(--amp) * .5deg)); }
+    100% { transform: translate(calc(var(--amp) * -1px), 0) rotate(calc(var(--amp) * -.5deg)); }
+  }
+  .crate-glow { position: absolute; inset: 8%; border-radius: 50%; z-index: -1; background: radial-gradient(closest-side, rgba(255, 210, 63, var(--glow, 0)), transparent 70%); }
+  .meter { justify-self: center; display: grid; gap: 10px; justify-items: center; min-height: 92px; }
+  .meter-bar { width: min(360px, 80vw); height: 12px; border-radius: 12px; background: var(--raise); border: 1px solid var(--line); overflow: hidden; }
+  .meter-bar i { display: block; height: 100%; width: calc(var(--charge, 0) * 100%); border-radius: 12px; background: repeating-linear-gradient(-45deg, rgba(255,255,255,.2) 0 10px, transparent 10px 20px), var(--sc-accent); }
+  .meter-text { font-weight: 700; font-size: 16px; text-align: center; min-height: 1.5em; }
+  .meter-text strong { color: var(--sc-accent); }
+  .reopen { display: none; }
+  .crate-done .reopen { display: inline-flex; }
+  .crate-done .meter-bar { display: none; }
+
+  /* ---------- סצנה 5: שאר הכלים (מסילה) ---------- */
+  .kit-stage { display: grid; grid-template-rows: auto 1fr; padding-block: 76px 48px; gap: 28px; }
+  .kit-head { padding-inline: clamp(20px, 4vw, 56px); display: grid; gap: 10px; }
+  .flip { transform: scaleX(-1); overflow: visible; display: flex; align-items: center; }
+  .rail { display: flex; gap: 20px; padding-inline: clamp(20px, 4vw, 56px); direction: ltr; align-items: stretch; }
+  .tool { transform: scaleX(-1); direction: rtl; flex: none; width: clamp(260px, 26vw, 330px); background: var(--sc-surface); border: 1px solid var(--line-soft); border-radius: 22px; padding: 16px; display: grid; grid-template-rows: auto auto 1fr; gap: 14px; }
+  .tool-view { position: relative; aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden; background: linear-gradient(180deg, #24133F, #130B24); }
+  .tool-view .tv-inner { position: absolute; top: 0; right: 0; transform-origin: top right; }
+  .tool h3 { margin: 0; font-size: 18px; font-weight: 800; }
+  .tool dl { margin: 0; display: grid; gap: 6px; font-size: 14px; }
+  .tool dl div { display: grid; grid-template-columns: 74px 1fr; gap: 8px; }
+  .tool dt { color: var(--faint); font-weight: 600; }
+  .tool dd { margin: 0; color: var(--sc-ink-soft); }
+  .screens-mini { position: absolute; inset: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .screens-mini span { border-radius: 10px; border: 2px dashed rgba(255,255,255,.18); display: grid; place-items: center; font-weight: 800; color: rgba(255,255,255,.7); font-size: 15px; }
+  .screens-mini span:first-child { border-style: solid; border-color: var(--sc-accent); color: var(--sc-accent); }
+
+  /* ---------- סצנה 6: ההתחלה (קלט אמיתי) ---------- */
+  .close-stage { display: grid; align-content: center; justify-items: center; padding: 80px 20px 0; }
+  .start-card { width: min(560px, 100%); background: var(--sc-surface); border: 1px solid var(--line); border-radius: 24px; padding: clamp(22px, 4vw, 36px); display: grid; gap: 18px; box-shadow: 0 30px 70px rgba(0,0,0,.45); }
+  .start-card .h-sec { font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); }
+  .prize-chip { display: none; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: var(--grape-soft); border: 1px solid rgba(124, 77, 255, .5); font-weight: 600; }
+  .prize-chip.on { display: flex; }
+  .prize-chip b { color: var(--sc-accent); }
+  .tt-field { display: flex; align-items: center; direction: ltr; background: var(--sc-canvas); border: 1px solid var(--line); border-radius: 14px; padding: 0 16px; min-height: 56px; transition: border-color .15s, box-shadow .15s; }
+  .tt-field:focus-within { border-color: var(--grape); box-shadow: 0 0 0 4px var(--grape-soft); }
+  .tt-field span { color: var(--faint); font-weight: 700; font-size: 18px; }
+  .tt-field input { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--sc-ink); font: inherit; font-size: 18px; font-weight: 500; padding: 0 6px; }
+  .start-card label { font-size: 14px; font-weight: 600; color: var(--sc-ink-soft); }
+  .start-card .btn-discord { width: 100%; }
+  .foot { width: min(1180px, 100%); margin-top: 64px; padding: 22px clamp(20px, 4vw, 56px) 26px; border-top: 1px solid var(--line-soft); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--faint); font-size: 13px; }
+
+  /* ---------- טלפון ---------- */
+  @media (max-width: 900px) {
+    :root { --side: 0px; }
+    .side { inset: 0 0 auto 0; width: auto; height: 56px; flex-direction: row; align-items: center; padding: 0 12px; gap: 4px; border-inline-end: 0; border-bottom: 1px solid var(--line-soft); overflow-x: auto; }
+    .brand { padding: 0; margin: 0 0 0 8px; border: 0; font-size: 18px; }
+    .brand svg { width: 28px; height: 28px; }
+    .nav-group, .side-foot, .nav a .lbl-long { display: none; }
+    .nav { display: flex; gap: 2px; }
+    .nav a { padding: 8px 10px; font-size: 13px; white-space: nowrap; }
+    .nav a svg { display: none; }
+    .nav a[aria-current="true"]::before { inset: auto 10px -9px 10px; width: auto; height: 3px; border-radius: 3px 3px 0 0; }
+    main { padding-top: 56px; }
+    .hero-grid { grid-template-columns: 1fr; padding-block: 36px 56px; gap: 40px; }
+    .hero-stage { width: min(270px, 74vw); }
+    .sticker { font-size: 13px; }
+    .sticker.s1 { inset-inline-end: -14%; } .sticker.s2 { inset-inline-start: -16%; } .sticker.s3 { inset-inline-end: -10%; }
+    .alerts-grid { grid-template-columns: 1fr; gap: 18px; }
+    .alerts-copy { order: -1; }
+    .alerts-copy .lede { font-size: 15px; }
+    .feed-card { display: none; }
+    .alerts-phone { width: min(230px, 62vw); }
+    .ae-grid { grid-template-columns: 1fr; }
+    .ae-phone { width: min(240px, 66vw); justify-self: center; }
+    .builder-row { grid-template-columns: 1fr; gap: 6px; }
+    .crate-stage { padding-block: 72px 24px; }
+    .crate-box { width: min(100vw, 62vh); }
+    .tool { width: 78vw; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .crate-box.charging .wheel-root, .kicker b, .chat p { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<span data-sc-progress></span>
+
+<!-- הכרום של האפליקציה הוא הניווט -->
+<nav class="side" aria-label="סצנות">
+  <a class="brand" href="#top" aria-label="LiveLoot">
+    <svg viewBox="0 0 36 36" aria-hidden="true"><rect x="3" y="7" width="30" height="25" rx="6" fill="#7C4DFF" stroke="#200A3A" stroke-width="3"/><rect x="3" y="7" width="30" height="9" rx="5" fill="#9A72FF" stroke="#200A3A" stroke-width="3"/><rect x="15" y="7" width="6" height="25" fill="#FFD23F" stroke="#200A3A" stroke-width="2.5"/><rect x="13" y="12" width="10" height="6" rx="1.5" fill="#FF3E8A" stroke="#200A3A" stroke-width="2"/></svg>
+    LiveLoot
+  </a>
+  <p class="nav-group">שליטה</p>
+  <div class="nav">
+    <a href="#top" data-nav="top"><svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>לייב</a>
+  </div>
+  <p class="nav-group">ווידג'טים ללייב</p>
+  <div class="nav">
+    <a href="#alerts" data-nav="alerts"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>התראות</a>
+    <a href="#actions" data-nav="actions"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>פעולות<span class="lbl-long">&nbsp;ואירועים</span></a>
+    <a href="#crate" data-nav="crate"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="3"/><path d="M3 11h18M12 7v14"/><path d="M9.5 3.5 12 7l2.5-3.5"/></svg>גלגל מזל</a>
+    <a href="#kit" data-nav="kit"><svg viewBox="0 0 24 24"><path d="M3 18h18l-1.6-10.2-4.9 4.4L12 5l-2.5 7.2-4.9-4.4z"/></svg>עוד כלים</a>
+  </div>
+  <p class="nav-group">כללי</p>
+  <div class="nav">
+    <a href="#start" data-nav="start"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5"/></svg>התחלה</a>
+  </div>
+  <div class="side-foot">
+    <p class="demo-note"><i aria-hidden="true"></i>הדגמה חיה, בלי סאונד</p>
+    <a class="side-login side-panel" href="/panel.html">פתח את הפאנל</a>
+  </div>
+</nav>
+
+<main id="top">
+
+  <!-- 1 · סקרנות: הפאנל כבר פתוח, מסך לייב ריק -->
+  <section class="hero" data-sc-act="flow" data-scene="top">
+    <div class="hero-grid-bg" data-sc-parallax="-0.25" aria-hidden="true"></div>
+    <div class="scene-wrap hero-grid">
+      <div class="hero-copy" data-sc-in data-sc-stagger="70">
+        <span class="kicker"><b aria-hidden="true"></b>ווידג'טים ל-TikTok LIVE Studio</span>
+        <h1 class="h-app">כל מתנה בלייב שלך עושה משהו על המסך</h1>
+        <p class="lede">התראות, גלגל מזל, אפקטים מטורפים, Top Gift ומונה עוקבים. מדביקים קישור ב-LIVE Studio, כותבים את השם שלך בטיקטוק, ועולים ללייב.</p>
+        <div class="hero-actions">
+          <a class="btn btn-discord" href="/panel.html">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5"/></svg>
+            פתח את הפאנל
+          </a>
+          <span class="note">הכלי כבר רץ על המחשב שלך</span>
+        </div>
+        <ul class="facts" aria-label="מה מקבלים">
+          <li>חינם</li><li>בעברית</li><li>עובד עם LIVE Studio</li><li>4 מסכים</li>
+        </ul>
+      </div>
+      <div class="hero-stage">
+        <div class="hero-glow" data-sc-parallax="-0.5" aria-hidden="true"></div>
+        <div class="phone" data-sc-parallax="0.12">
+          <div class="screen" id="heroScreen">
+            <span class="live-tag">LIVE</span><span class="viewers">412 צופים</span>
+            <div class="streamer" aria-hidden="true"></div>
+            <div class="ov" data-ov="1100"></div>
+            <div class="chat" aria-hidden="true"></div>
+          </div>
+        </div>
+        <span class="sticker s1" data-sc-parallax="0.55" aria-hidden="true">Rose ×5</span>
+        <span class="sticker s2" data-sc-parallax="0.8" aria-hidden="true">+1 עוקב</span>
+        <span class="sticker s3" data-sc-parallax="0.4" aria-hidden="true">פרס גדול!</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · זיהוי: הגלילה שולחת מתנות, ההתראות קופצות -->
+  <section id="alerts" data-sc-act="pin" data-sc-span="2.3" data-scene="alerts">
+    <div data-sc-stage class="alerts-stage">
+      <div class="scene-wrap alerts-grid">
+        <div class="feed-card" aria-label="מה קורה בלייב (הדגמה)">
+          <div class="feed-head"><h3>מה קורה בלייב</h3><span>הדגמה</span></div>
+          <ol class="feed" id="alertFeed"></ol>
+        </div>
+        <div class="alerts-copy">
+          <h2 class="h-sec">הצופה שולח. השם שלו קופץ על המסך.</h2>
+          <p class="lede">כל מתנה, עוקב ושיתוף מקבלים התראה עם השם של הצופה, וכמה שהמתנה גדולה יותר, ככה ההתראה גדולה יותר. אתה בוחר מה כתוב ואיזה סאונד מתנגן.</p>
+          <div class="alerts-phone">
+            <div class="phone"><div class="screen" id="alertsScreen">
+              <span class="live-tag">LIVE</span><span class="viewers">418 צופים</span>
+              <div class="streamer" aria-hidden="true"></div>
+              <div class="ov" data-ov="1100"></div>
+              <div class="chat" aria-hidden="true"></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · שליטה: המבקר בונה אירוע ומפעיל אותו -->
+  <section id="actions" class="ae" data-sc-act="flow" data-scene="actions">
+    <div class="scene-wrap ae-grid">
+      <div class="ae-copy" data-sc-in data-sc-stagger="80">
+        <h2 class="h-sec">אתה מחליט מה כל מתנה עושה</h2>
+        <p class="lede">בוחרים מתי ומה קורה: Rose מפעיל מטאור, Lion מפעיל וידאו שהעלית, וצופה שכותב !מטאור בצ'אט מפעיל את מה שבחרת. נסה עכשיו:</p>
+        <div class="builder" role="group" aria-label="בונה אירוע (הדגמה)">
+          <div class="builder-row"><span>מתי</span>
+            <div class="seg" data-seg="when">
+              <button type="button" aria-pressed="true" data-v="Rose">מישהו שולח Rose</button>
+              <button type="button" aria-pressed="false" data-v="Lion">מישהו שולח Lion</button>
+              <button type="button" aria-pressed="false" data-v="!מטאור">כותבים !מטאור</button>
+            </div>
+          </div>
+          <div class="builder-row"><span>מה קורה</span>
+            <div class="seg" data-seg="what">
+              <button type="button" aria-pressed="true" data-v="meteor">מטאור</button>
+              <button type="button" aria-pressed="false" data-v="vacuum">חור שחור</button>
+              <button type="button" aria-pressed="false" data-v="splat">הצופה נזרק</button>
+            </div>
+          </div>
+          <div class="builder-foot">
+            <small id="ruleLine">מישהו שולח Rose ← מטאור</small>
+            <button class="btn btn-volt" type="button" id="fireBtn">בדוק את האירוע</button>
+          </div>
+        </div>
+      </div>
+      <div class="ae-phone">
+        <div class="phone"><div class="screen" id="fxScreen">
+          <span class="live-tag">LIVE</span><span class="viewers">431 צופים</span>
+          <div class="streamer" aria-hidden="true"></div>
+          <div class="ov-full" id="fxRoot"></div>
+          <div class="chat" aria-hidden="true"></div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · ציפייה ואז השיא: הגלילה טוענת את הארגז עד שהוא מתפוצץ -->
+  <section id="crate" data-sc-act="pin" data-sc-span="3.6" data-scene="crate">
+    <div data-sc-stage class="crate-stage" id="crateStage">
+      <div class="crate-head">
+        <h2 class="h-sec">עכשיו תורך לפתוח את הארגז</h2>
+        <p class="lede">ככה זה נראה כשצופה שולח את המתנה שבחרת. תמשיך לגלול כדי לטעון אותו, או תלחץ עליו.</p>
+      </div>
+      <div class="crate-box" id="crateBox">
+        <div class="crate-glow" aria-hidden="true"></div>
+        <div class="wheel-root" id="wheelRoot" role="button" tabindex="0" aria-label="פתח את הארגז"></div>
+      </div>
+      <div class="meter" aria-live="polite">
+        <div class="meter-bar" aria-hidden="true"><i></i></div>
+        <p class="meter-text" id="meterText">הארגז נטען כשגוללים</p>
+        <button class="btn reopen" type="button" id="reopen">לפתוח עוד אחד</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · ביטחון: שאר הכלים, כל אחד עובד באמת -->
+  <section id="kit" data-sc-act="pan" data-sc-span="2.6" data-scene="kit">
+    <div data-sc-stage class="kit-stage">
+      <div class="kit-head">
+        <h2 class="h-sec">ועוד כלים שעובדים לבד בזמן הלייב</h2>
+        <p class="lede">כל כלי מקבל קישור אישי. מדביקים אותו ב-LIVE Studio פעם אחת, וזהו.</p>
+      </div>
+      <div class="flip">
+        <div class="rail" data-sc-pan="0.04">
+          <article class="tool">
+            <div class="tool-view" data-tool="top"><div class="tv-inner" data-w="600" data-h="600"></div></div>
+            <h3>Top Gift</h3>
+            <dl><div><dt>מה מוצג</dt><dd>מי ששלח את המתנה הכי גדולה</dd></div><div><dt>מתי מתחלף</dt><dd>כשמישהו עוקף אותו, עם אנימציה</dd></div><div><dt>איפוס</dt><dd>אוטומטי בכל לייב חדש</dd></div></dl>
+          </article>
+          <article class="tool">
+            <div class="tool-view" data-tool="fol"><div class="tv-inner" data-w="520" data-h="520"></div></div>
+            <h3>מונה עוקבים</h3>
+            <dl><div><dt>מה מוצג</dt><dd>התמונה שלך ומספר העוקבים</dd></div><div><dt>מתעדכן</dt><dd>בכל עוקב חדש, בזמן אמת</dd></div><div><dt>בלייב הזה</dt><dd>כמה הצטרפו וכמה הסירו</dd></div></dl>
+          </article>
+          <article class="tool">
+            <div class="tool-view"><div class="screens-mini" aria-hidden="true"><span>מסך 1</span><span>מסך 2</span><span>מסך 3</span><span>מסך 4</span></div></div>
+            <h3>4 מסכים</h3>
+            <dl><div><dt>מה זה</dt><dd>כל פעולה בוחרת באיזה מסך להופיע</dd></div><div><dt>למה</dt><dd>וידאו במקום אחד, התראות במקום אחר</dd></div><div><dt>קבצים</dt><dd>סאונד, וידאו ו-GIF שאתה מעלה</dd></div></dl>
+          </article>
+          <article class="tool">
+            <div class="tool-view" data-tool="alert"><div class="tv-inner" data-w="1100" data-h="1100"></div></div>
+            <h3>התראות מותאמות</h3>
+            <dl><div><dt>לכל אירוע</dt><dd>מתנה, עוקב, שיתוף ולייקים</dd></div><div><dt>מה משנים</dt><dd>טקסט, סאונד ומשך</dd></div><div><dt>סגנון</dt><dd>מדבקות צבעוניות שבולטות בלייב</dd></div></dl>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · מוכנות: קלט אמיתי, הפרס מחכה -->
+  <section id="start" data-sc-act="pin" data-sc-span="1.25" data-scene="start">
+    <div data-sc-stage class="close-stage">
+      <form class="start-card" id="startForm" action="/panel.html" method="get">
+        <h2 class="h-sec">מה השם שלך בטיקטוק?</h2>
+        <p class="prize-chip" id="prizeChip">הפרס שלך מהארגז: <b id="prizeName"></b></p>
+        <label for="tt">הכלי יתחבר ללייב שלך עם השם הזה</label>
+        <div class="tt-field"><span>@</span><input id="tt" name="tt" autocomplete="off" spellcheck="false" placeholder="username" maxlength="40"></div>
+        <button class="btn btn-discord" type="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 4v5"/></svg>
+          שמור ופתח את הפאנל
+        </button>
+        
+      </form>
+      <footer class="foot">
+        <span>LiveLoot הוא כלי עצמאי ואינו קשור לטיקטוק.</span>
+        <span>חינם · בעברית · נבנה בישראל</span>
+      </footer>
+    </div>
+  </section>
+
+</main>
+
+<script src="/overlay/sound.js"></script>
+<script src="/overlay/alerts.js"></script>
+<script src="/overlay/effects.js"></script>
+<script src="/overlay/wheel.js"></script>
+<script src="/overlay/topgift.js"></script>
+<script src="/overlay/followers.js"></script>
+<script src="/lp/scrollcraft.js"></script>
+<script>
+(function () {
+  try { document.cookie = 'll_seen=1; max-age=31536000; path=/; SameSite=Lax'; } catch {}
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+
+  // ---------- ממקמים את שכבות הווידג'טים בתוך כל מסך ----------
+  function fitOverlays() {
+    $$('.ov').forEach(o => { const w = o.parentElement.clientWidth; o.style.transform = `translateX(-50%) scale(${w / Number(o.dataset.ov)})`; });
+    const fx = $('#fxRoot'); if (fx) fx.style.transform = `scale(${fx.parentElement.clientWidth / 1920})`;
+    $$('.tv-inner').forEach(t => { const w = t.parentElement.clientWidth; t.style.width = t.dataset.w + 'px'; t.style.height = t.dataset.h + 'px'; t.style.transform = `scale(${w / Number(t.dataset.w)})`; });
+  }
+
+  // ---------- צ'אט חי ----------
+  const names = ['star.rider', 'Gamer1', 'pixel.queen', 'night.owl', 'BlueFox', 'moon_walker', 'sky.dreamer', 'NovaX'];
+  const lines = ['איזה לייב', 'עוד סיבוב!!', 'שלחתי ורד', 'חחחחח', 'מטאור!', 'אגדה', 'תפתח ארגז', 'מתי הסקין?'];
+  function chatTick() {
+    $$('.chat').forEach(chat => {
+      if (chat.getBoundingClientRect().bottom < -200 || chat.getBoundingClientRect().top > innerHeight + 200) return;
+      const p = document.createElement('p');
+      p.innerHTML = '<b></b> <span></span>';
+      p.querySelector('b').textContent = pick(names);
+      p.querySelector('span').textContent = pick(lines);
+      chat.appendChild(p);
+      while (chat.children.length > 3) chat.firstChild.remove();
+    });
+  }
+
+  // ---------- סצנה 1: התראות מגיעות לבד למסך של הפתיחה ----------
+  const heroAlerts = AlertsView($('#heroScreen .ov'), { muted: true });
+  const heroSeq = [
+    { style: 'gift', title: 'pixel.queen', subtitle: 'שלחה Rose ×5', duration: 3 },
+    { style: 'follow', title: 'night.owl', subtitle: 'התחיל לעקוב', duration: 3 },
+    { style: 'big', title: 'Gamer1', subtitle: 'מתנה ענקית! Lion ×1', duration: 3.5 }
+  ];
+  let heroI = 0;
+
+  // ---------- סצנה 2: הגלילה שולחת אירועים ----------
+  const ICON = {
+    gift: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/></svg>',
+    follow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6M19 8v6M22 11h-6"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>'
+  };
+  const alertEvents = [
+    { kind: 'gift', c: '#FFD23F', who: 'luna.live', what: 'שלחה Rose ×5', coins: '5', alert: { style: 'gift', title: 'luna.live', subtitle: 'שלחה Rose ×5' } },
+    { kind: 'follow', c: '#22E5C7', who: 'star.rider', what: 'התחילה לעקוב', coins: '', alert: { style: 'follow', title: 'star.rider', subtitle: 'התחילה לעקוב' } },
+    { kind: 'share', c: '#A98BFF', who: 'happy.viewer', what: 'שיתף את הלייב', coins: '', alert: { style: 'share', title: 'happy.viewer', subtitle: 'שיתף את הלייב' } },
+    { kind: 'gift', c: '#FF7A45', who: 'big.spender', what: 'שלח Lion ×1', coins: '29,999', alert: { style: 'big', title: 'big.spender', subtitle: 'מתנה ענקית! Lion ×1' } }
+  ];
+  const feed = $('#alertFeed');
+  feed.innerHTML = alertEvents.map(e => `<li style="--c:${e.c}"><span class="ico">${ICON[e.kind]}</span><span><b dir="auto">${e.who}</b><small>${e.what}</small></span><em>${e.coins}</em></li>`).join('');
+  const feedItems = $$('li', feed);
+  const alertsView = AlertsView($('#alertsScreen .ov'), { muted: true });
+  let alertStep = -1;
+
+  // ---------- סצנה 3: בונה אירוע ----------
+  const fx = EffectsView($('#fxRoot'), { muted: true });
+  const builder = { when: 'Rose', what: 'meteor' };
+  const WHAT = { meteor: 'מטאור', vacuum: 'חור שחור', splat: 'הצופה נזרק' };
+  const WHEN = { Rose: 'מישהו שולח Rose', Lion: 'מישהו שולח Lion', '!מטאור': 'כותבים !מטאור' };
+  $$('.seg').forEach(seg => seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $$('button', seg).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    builder[seg.dataset.seg] = b.dataset.v;
+    $('#ruleLine').textContent = `${WHEN[builder.when]} ← ${WHAT[builder.what]}`;
+  }));
+  $('#fireBtn').addEventListener('click', () => {
+    const name = pick(names);
+    fx.fire({ effect: builder.what, name, avatar: '', caption: builder.what === 'meteor' ? `${name} הפיל מטאור!` : '', voice: 'none' });
+  });
+
+  // ---------- סצנה 4: הארגז. הגלילה טוענת אותו, ובסוף פרס אמיתי מהגלגל ----------
+  const prizes = [
+    { text: 'רק שוטגאן', color: '#FFD23F', chance: 20 },
+    { text: 'ריקוד בלייב', color: '#6FE3FF', chance: 26 },
+    { text: 'שיר בלייב', color: '#3DD68C', chance: 12, big: true },
+    { text: 'מבטא רוסי', color: '#A48BFA', chance: 16 },
+    { text: 'בלי לבנות', color: '#FF6A3D', chance: 16 },
+    { text: 'סקין לבחירתך', color: '#FF3E8A', chance: 10, big: true }
+  ];
+  const wheel = WheelView($('#wheelRoot'), { muted: true });
+  wheel.setSettings({ prizes, hideIdle: false });
+  const crateAct = $('#crate'), crateBox = $('#crateBox'), crateStage = $('#crateStage'), meterText = $('#meterText');
+  const BURST_AT = 0.46, SPIN = 5200;
+  let crate = 'idle', won = null, armed = true;
+  function weighted() {
+    const tot = prizes.reduce((a, p) => a + p.chance, 0);
+    let r = Math.random() * tot;
+    for (let i = 0; i < prizes.length; i++) { r -= prizes[i].chance; if (r < 0) return i; }
+    return 0;
+  }
+  function openCrate() {
+    if (crate === 'opening') return;
+    crate = 'opening'; armed = false;
+    crateBox.classList.remove('charging');
+    crateStage.classList.remove('crate-done');
+    const index = weighted();
+    wheel.enqueue({ name: 'אתה', avatar: '', index, prizes, duration: SPIN });
+    meterText.innerHTML = 'הארגז נפתח...';
+    setTimeout(() => {
+      won = prizes[index];
+      crate = 'done';
+      crateStage.classList.add('crate-done');
+      meterText.innerHTML = `קיבלת: <strong></strong>`;
+      meterText.querySelector('strong').textContent = won.text;
+      $('#prizeName').textContent = won.text;
+      $('#prizeChip').classList.add('on');
+      try { localStorage.setItem('ll_prize', won.text); } catch {}
+    }, SPIN + 900);
+  }
+  $('#wheelRoot').addEventListener('click', () => { if (crate !== 'opening') openCrate(); });
+  $('#wheelRoot').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && crate !== 'opening') { e.preventDefault(); openCrate(); } });
+  $('#reopen').addEventListener('click', openCrate);
+
+  // ---------- סצנה 5: הכלים בזמן אמת ----------
+  const top = TopGiftView($('[data-tool="top"] .tv-inner'), { muted: true });
+  top.setSettings({ title: 'המתנה הכי גדולה', titleColor: '#FFFFFF', titleSize: 50, nameColor: '#FFFFFF', nameSize: 56, coinsColor: '#FFD23F', coinsLabel: 'מטבעות', emptyCoins: 15000, showGift: true, showAvatar: false, showCoins: true, outline: true, outlineColor: '#200A3A', font: 'fredoka', celebrate: true });
+  const fol = FollowersView($('[data-tool="fol"] .tv-inner'), { muted: true });
+  fol.setSettings({ label: 'עוקבים', ringColor: '#FFD23F', numberColor: '#FFFFFF', labelColor: '#C9CCD3', font: 'fredoka', outline: true, showAvatar: true, showSession: true, celebrate: true, goal: 0 });
+  fol.setData({ count: 12480, avatar: '', name: 'Liroy', session: 0 }, true);
+  const toolAlerts = AlertsView($('[data-tool="alert"] .tv-inner'), { muted: true });
+  let kitTick = 0, topCoins = 0;
+  function kitLoop() {
+    kitTick++;
+    const name = pick(names);
+    topCoins = topCoins ? Math.round(topCoins * 1.4) : 500;
+    if (topCoins > 40000) topCoins = 500;
+    top.setTop({ top: { name, gift: 'Galaxy', coins: topCoins, count: 1, giftImage: '' }, previous: null, beaten: kitTick > 1 });
+    fol.setData({ count: 12480 + kitTick, session: kitTick, lastName: name }, false);
+    toolAlerts.enqueue({ style: pick(['gift', 'follow', 'big', 'share']), title: name, subtitle: pick(['שלח Rose ×3', 'התחיל לעקוב', 'מתנה ענקית!', 'שיתף את הלייב']), duration: 2.4 });
+  }
+
+  // ---------- סגירה: שם המשתמש עובר להתחברות ----------
+  try { const saved = localStorage.getItem('ll_prize'); if (saved) { $('#prizeName').textContent = saved; $('#prizeChip').classList.add('on'); } } catch {}
+  $('#startForm').addEventListener('submit', e => {
+    const v = $('#tt').value.replace(/^@/, '').trim();
+    if (!v) { e.preventDefault(); location.href = '/panel.html'; }
+    else $('#tt').value = v;
+  });
+
+  // ---------- ניווט: הסצנה הנוכחית מסומנת בסרגל ----------
+  const navLinks = $$('[data-nav]');
+  const scenes = $$('[data-scene]');
+  function markNav() {
+    const mid = innerHeight * 0.45;
+    let cur = scenes[0].dataset.scene;
+    for (const s of scenes) { const r = s.getBoundingClientRect(); if (r.top <= mid) cur = s.dataset.scene; }
+    navLinks.forEach(a => a.setAttribute('aria-current', String(a.dataset.nav === cur)));
+  }
+
+  // ---------- לולאה אחת שקוראת את ההתקדמות של כל סצנה ----------
+  const p = el => parseFloat(el.style.getPropertyValue('--sc-p')) || 0;
+  const alertsAct = $('#alerts');
+  function frame() {
+    // התראות: ארבעה צעדים לאורך הסצנה
+    const ap = p(alertsAct);
+    const step = Math.min(alertEvents.length - 1, Math.floor((ap - 0.08) / 0.2));
+    if (step > alertStep) { for (let i = alertStep + 1; i <= step; i++) alertsView.enqueue({ ...alertEvents[i].alert, duration: 3 }); alertStep = step; }
+    if (ap < 0.04 && alertStep > -1) { alertStep = -1; alertsView.clear(); }
+    feedItems.forEach((li, i) => li.classList.toggle('on', i <= alertStep));
+    // הארגז: שקט, טעינה, פיצוץ
+    const cp = p(crateAct);
+    if (crate === 'idle' || crate === 'charging') {
+      const charge = Math.max(0, Math.min(1, (cp - 0.12) / (BURST_AT - 0.12)));
+      crateBox.style.setProperty('--charge', charge.toFixed(3));
+      crateStage.style.setProperty('--charge', charge.toFixed(3));
+      crateBox.style.setProperty('--amp', reduce ? 0 : (charge * 9).toFixed(2));
+      crateBox.style.setProperty('--glow', (charge * .55).toFixed(3));
+      if (charge > 0 && crate === 'idle') { crate = 'charging'; crateBox.classList.add('charging'); }
+      if (charge <= 0 && crate === 'charging') { crate = 'idle'; crateBox.classList.remove('charging'); }
+      if (crate === 'charging') meterText.textContent = charge > .8 ? 'עוד קצת...' : `הארגז נטען ${Math.round(charge * 100)}%`;
+      else meterText.textContent = 'הארגז נטען כשגוללים';
+      if (charge >= 1 && armed) openCrate();
+    }
+    // אחרי שהמבקר גלל חזרה לגמרי למעלה, אפשר לטעון שוב
+    if (cp < 0.05 && crate === 'done') { crate = 'idle'; armed = true; crateStage.classList.remove('crate-done'); crateBox.style.setProperty('--glow', 0); }
+    markNav();
+    requestAnimationFrame(frame);
+  }
+
+  addEventListener('resize', fitOverlays);
+  addEventListener('load', fitOverlays);
+  ScrollCraft.mount(document.body);
+  fitOverlays();
+  requestAnimationFrame(frame);
+  if (!reduce) {
+    chatTick(); setInterval(chatTick, 1700);
+    setTimeout(function heroLoop() { heroAlerts.enqueue({ ...heroSeq[heroI++ % heroSeq.length], sound: 'none' }); setTimeout(heroLoop, 4200); }, 900);
+    kitLoop(); setInterval(kitLoop, 3200);
+  } else {
+    chatTick(); chatTick(); chatTick();
+    heroAlerts.enqueue({ ...heroSeq[2], duration: 9999 });
+    kitLoop();
+  }
+})();
+</script>
+</body>
+</html>

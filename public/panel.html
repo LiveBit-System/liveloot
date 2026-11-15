@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiveLoot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+Hebrew:wght@400;500;600;700&family=Rubik:wght@500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="overlay/overlay.css">
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+<div class="app">
+
+
+
+<div class="shell">
+  <nav class="side" aria-label="אזורים">
+    <a class="brand" href="/home" title="מסך הפתיחה"><svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true"><rect x="3" y="7" width="30" height="25" rx="6" fill="#7C4DFF" stroke="#200A3A" stroke-width="3"/><rect x="3" y="7" width="30" height="9" rx="5" fill="#9A72FF" stroke="#200A3A" stroke-width="3"/><rect x="15" y="7" width="6" height="25" fill="#FFD23F" stroke="#200A3A" stroke-width="2.5"/><rect x="13" y="12" width="10" height="6" rx="1.5" fill="#FF3E8A" stroke="#200A3A" stroke-width="2"/></svg>LiveLoot</a>
+    <p class="nav-group">שליטה</p>
+    <button class="nav-item" data-view="live" aria-current="page">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>לייב</span>
+    </button>
+    <p class="nav-group">ווידג'טים ללייב</p>
+    <button class="nav-item" data-view="alerts">
+      <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span>התראות</span>
+    </button>
+    <button class="nav-item" data-view="actions">
+      <svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span>פעולות ואירועים</span>
+    </button>
+    <button class="nav-item" data-view="wheel">
+      <svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="3"/><path d="M3 11h18M12 7v14"/><path d="M9.5 3.5 12 7l2.5-3.5"/></svg><span>גלגל מזל</span>
+    </button>
+    <button class="nav-item" data-view="winners">
+      <svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg><span>זוכים</span>
+    </button>
+    <button class="nav-item" data-view="topgift">
+      <svg viewBox="0 0 24 24"><path d="M3 18h18l-1.6-10.2-4.9 4.4L12 5l-2.5 7.2-4.9-4.4z"/></svg><span>Top Gift</span>
+    </button>
+    <button class="nav-item" data-view="followers">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>עוקבים</span>
+    </button>
+    <p class="nav-group">כללי</p>
+    <button class="nav-item" data-view="obs">
+      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg><span>קישורים ללייב</span>
+    </button>
+    <button class="nav-item" data-view="prefs">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>הגדרות</span>
+    </button>
+    <div class="side-foot">
+      <span class="side-dot" aria-hidden="true"></span>
+      <span>הכלי רץ על המחשב שלך</span>
+    </div>
+  </nav>
+
+  <div class="content">
+<header class="bar">
+
+  <form class="connect" id="connectForm">
+    <label class="user" for="username">
+      <span class="at">@</span>
+      <input id="username" autocomplete="off" spellcheck="false" aria-label="שם המשתמש שלך בטיקטוק">
+    </label>
+    <button type="submit" class="btn btn-primary" id="connectBtn">התחבר ללייב</button>
+  </form>
+
+  <div class="status" id="status" data-state="offline" role="status">
+    <i class="dot"></i><span id="statusText">לא מחובר</span>
+  </div>
+
+  <button class="btn btn-clear" id="clearScreen" type="button" title="עוצר מיד את כל האפקטים, ההתראות והקולות בלייב">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+    נקה מסך
+  </button>
+
+  <dl class="stats">
+    <div><dt>צופים</dt><dd id="viewers">0</dd></div>
+    <div><dt>לייקים</dt><dd id="likes">0</dd></div>
+  </dl>
+</header>
+
+  <main class="main">
+
+    <!-- ===== לייב ===== -->
+    <section class="view" data-view="live">
+      <div class="key-banner" id="keyBanner" hidden>
+        <div><b>עוד צעד אחד לפני הלייב הראשון</b><span>מוסיפים מפתח חיבור חינמי, כדי שהחיבור לטיקטוק יעבוד בלי הגבלות.</span></div>
+        <button class="btn btn-primary btn-sm" type="button" id="keyBannerGo">להוספת המפתח</button>
+      </div>
+      <div class="live-grid">
+        <div class="panel feed-panel">
+          <div class="panel-head"><h2>מה קורה בלייב</h2></div>
+          <ol class="feed" id="feed"></ol>
+          <p class="empty" id="feedEmpty">עוד אין אירועים. תתחבר ללייב, או תשלח אירוע בדיקה מהכפתורים.</p>
+        </div>
+
+        <div class="live-side">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>מסך ההתראות</h2>
+              <span class="hint-inline">כמו שהצופים יראו</span>
+            </div>
+            <div class="stage stage-wide" id="alertsStage"><div class="stage-inner" data-w="1920" data-h="1080"></div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>שליחת אירוע בדיקה</h2></div>
+            <div class="tests">
+              <button class="btn btn-test" data-test="gift" data-kind="gift">מתנה קטנה</button>
+              <button class="btn btn-test" data-test="bigGift" data-kind="big">מתנה גדולה</button>
+              <button class="btn btn-test" data-test="follow" data-kind="follow">עוקב</button>
+              <button class="btn btn-test" data-test="share" data-kind="share">שיתוף</button>
+              <button class="btn btn-test" data-test="like" data-kind="like">לייקים</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== התראות ===== -->
+    <section class="view" data-view="alerts" hidden>
+      <div class="view-head">
+        <div>
+          <h1>התראות</h1>
+          <p class="lede">כשקורה משהו בלייב, החוק הכי מדויק שמתאים מופעל. מתנה לפי שם קודמת למינימום מטבעות, ומינימום קודם לחוק כללי.</p>
+        </div>
+        <button class="btn btn-primary" id="addRule">חוק חדש</button>
+      </div>
+      <div class="link-box" data-link="/alerts">
+        <div class="link-text">
+          <b>הקישור ל-LIVE Studio</b>
+          <span>הוספת מקור ← קישור. רזולוציה: 1920 על 1080. אותו קישור מציג גם את האפקטים</span>
+        </div>
+        <code dir="ltr"></code>
+        <button class="btn btn-sm" type="button" data-copy-link>העתק</button>
+      </div>
+      <ul class="rules" id="rules"></ul>
+    </section>
+
+    <!-- ===== פעולות ואירועים ===== -->
+    <section class="view" data-view="actions" hidden>
+      <div class="view-head">
+        <div>
+          <h1>פעולות ואירועים</h1>
+          <p class="lede">פעולה היא מה שקורה על המסך: סאונד, וידאו, תמונה, אפקט או סיבוב בגלגל. אירוע הוא מתי זה קורה: מתנה, עוקב, שיתוף או לייקים. קודם יוצרים פעולה, ואז מחברים אותה לאירוע.</p>
+        </div>
+      </div>
+      <div class="panel screens-panel">
+        <div class="panel-head"><h2>המסכים ב-LIVE Studio</h2><span class="hint-inline">כל פעולה בוחרת באיזה מסך להופיע. רזולוציה: 1920 על 1080</span></div>
+        <ul class="screens" id="screenLinks"></ul>
+      </div>
+      <div class="ae-grid">
+        <div class="ae-main">
+          <div class="panel">
+            <div class="panel-head">
+              <div><h2>פעולות</h2><span class="hint-inline">מה קורה על המסך</span></div>
+              <button class="btn btn-primary btn-sm" id="addAction" type="button">פעולה חדשה</button>
+            </div>
+            <ul class="rules" id="actList"></ul>
+            <p class="empty" id="actEmpty" hidden>עוד אין פעולות. תלחץ "פעולה חדשה" כדי ליצור את הראשונה.</p>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <div><h2>אירועים</h2><span class="hint-inline">מתי הפעולות קורות. כל אירוע שמתאים מופעל</span></div>
+              <button class="btn btn-primary btn-sm" id="addEvent" type="button">אירוע חדש</button>
+            </div>
+            <ul class="rules" id="evList"></ul>
+            <p class="empty" id="evEmpty" hidden>עוד אין אירועים. תיצור פעולה, ואז "אירוע חדש" שמחבר אותה למתנה או לעוקב.</p>
+          </div>
+        </div>
+        <div class="panel ae-preview">
+          <div class="panel-head"><h2>תצוגה</h2><span class="hint-inline">כל המסכים יחד, בלי סאונד</span></div>
+          <div class="stage stage-wide" id="fxStage"><div class="stage-inner" data-w="1920" data-h="1080"></div></div>
+          <label class="field range" for="fxVolume"><span>עוצמת הסאונד בלייב (אפקטים, קולות וקבצים)</span><input type="range" id="fxVolume" min="0" max="100"><output></output></label>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== גלגל מזל ===== -->
+    <section class="view" data-view="wheel" hidden>
+      <div class="view-head">
+        <div>
+          <h1>גלגל מזל</h1>
+          <p class="lede">צופה ששולח את המתנה שבחרת מסובב את הגלגל, ומה שיוצא מופיע בגדול על המסך. סיבובים ברצף מחכים בתור.</p>
+        </div>
+      </div>
+      <div class="link-box" data-link="/wheel">
+        <div class="link-text">
+          <b>הקישור ל-LIVE Studio</b>
+          <span>הוספת מקור ← קישור. רזולוציה: 700 על 700</span>
+        </div>
+        <code dir="ltr"></code>
+        <button class="btn btn-sm" type="button" data-copy-link>העתק</button>
+      </div>
+      <div class="tg-grid">
+        <div class="panel tg-preview">
+          <div class="stage stage-wheel" id="wheelStage"><div class="stage-inner" data-w="700" data-h="700"></div></div>
+          <div class="tg-actions">
+            <button class="btn btn-primary" type="button" id="wheelTest">סובב לבדיקה</button>
+            <button class="btn" type="button" id="wheelTestBig">בדיקה עם פרס גדול</button>
+          </div>
+        </div>
+        <form class="panel tg-settings" id="wheelForm">
+          <div class="wheel-run" id="wheelRun" data-paused="false">
+            <div class="wheel-run-text"><b id="wheelRunTitle">הגלגל פועל</b><span id="wheelRunSub">מתנות ועוקבים מסובבים אותו</span></div>
+            <button class="btn" type="button" id="wheelPauseBtn">עצור את הגלגל</button>
+          </div>
+          <fieldset>
+            <legend>מה מסובב</legend>
+            <label class="check" for="wh-enabled"><input type="checkbox" id="wh-enabled" name="enabled"><span>הגלגל פעיל</span></label>
+            <label class="check" for="wh-onFollow"><input type="checkbox" id="wh-onFollow" name="onFollow"><span>עוקב חדש מסובב את הגלגל (פעם אחת לכל צופה בלייב)</span></label>
+            <div class="field"><span>המתנות שמסובבות (באנגלית, כמו שהן בטיקטוק)</span>
+              <ul class="gift-chips" id="giftChips"></ul>
+              <div class="gift-add">
+                <input id="wh-giftInput" placeholder="למשל Rose" list="giftNames" aria-label="שם מתנה להוספה" autocomplete="off">
+                <button class="btn btn-sm" type="button" id="wh-giftAdd">הוסף מתנה</button>
+              </div>
+            </div>
+            <datalist id="giftNames"><option value="Rose"><option value="Heart Me"><option value="Finger Heart"><option value="Doughnut"><option value="Perfume"><option value="Galaxy"><option value="Lion"><option value="Universe"></datalist>
+            <p class="hint">כל מתנה ברצף נספרת: Rose ×50 נותן 50 סיבובים, אחד אחרי השני. אפשר לעצור את הגלגל בכל רגע.</p>
+          </fieldset>
+          <fieldset>
+            <legend>הפרסים על הגלגל</legend>
+            <p class="hint">הסיכוי הוא יחסי: פרס עם 20 יוצא פי 2 יותר מפרס עם 10. בין 2 ל-16 פרסים.<br>"פרס גדול" מקבל חגיגה מלאה. כל השאר ("נסה שוב", "כלום") מקבלים צליל אכזבה בלי קונפטי.</p>
+            <ul class="prize-list" id="prizeList"></ul>
+            <button class="btn btn-sm" type="button" id="addPrize">הוסף פרס</button>
+          </fieldset>
+          <fieldset>
+            <legend>הזוכים של הגלגל</legend>
+            <p class="hint">רק מי שיצא לו פרס גדול, בלייב הזה. רק אתה רואה את זה. ההיסטוריה המלאה בטאב "זוכים".</p>
+            <ol class="big-winners" id="bigWinners"></ol>
+          </fieldset>
+          <fieldset>
+            <legend>תצוגה</legend>
+            <label class="check" for="wh-muted"><input type="checkbox" id="wh-muted" name="muted"><span>להשתיק את הצלילים של הגלגל</span></label>
+            <label class="check" for="wh-hideIdle"><input type="checkbox" id="wh-hideIdle" name="hideIdle"><span>להסתיר את הגלגל כשאף אחד לא מסובב</span></label>
+          </fieldset>
+          <p class="saved" id="wheelSaved" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===== זוכים ===== -->
+    <section class="view" data-view="winners" hidden>
+      <div class="view-head">
+        <div>
+          <h1>זוכים</h1>
+          <p class="lede">כל מי שזכה בגלגל המזל, בלייב הזה ובלייבים קודמים. הרשימה מוצגת רק לך בפאנל, לא בלייב.</p>
+        </div>
+      </div>
+      <div class="win-stats" id="winStats"></div>
+      <div class="panel">
+        <div class="win-tools">
+          <div class="seg-tabs" role="tablist" aria-label="איזה לייב">
+            <button type="button" role="tab" aria-selected="true" data-scope="now">הלייב הזה</button>
+            <button type="button" role="tab" aria-selected="false" data-scope="all">כל הזמנים</button>
+            <button type="button" role="tab" aria-selected="false" data-scope="big">רק פרסים גדולים</button>
+          </div>
+          <label class="field win-search" for="winSearch"><span class="sr">חיפוש צופה</span><input id="winSearch" type="search" placeholder="חיפוש לפי שם צופה או פרס" autocomplete="off"></label>
+          <label class="check" for="winTests"><input type="checkbox" id="winTests"><span>להראות גם בדיקות</span></label>
+        </div>
+        <div class="win-table-wrap">
+          <table class="win-table">
+            <thead><tr><th>מתי</th><th>צופה</th><th>פרס</th><th>איך</th><th><span class="sr">סטטוס</span></th></tr></thead>
+            <tbody id="winBody"></tbody>
+          </table>
+        </div>
+        <p class="empty" id="winEmpty" hidden></p>
+        <div class="win-foot">
+          <button class="btn btn-sm" type="button" id="winClear">מחק את כל ההיסטוריה</button>
+          <div class="confirm" id="winConfirm" hidden>
+            <span>למחוק את כל הזוכים מכל הלייבים? אי אפשר לשחזר.</span>
+            <button class="btn btn-danger btn-sm" type="button" id="winClearYes">כן, מחק</button>
+            <button class="btn btn-sm" type="button" id="winClearNo">ביטול</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Top Gift ===== -->
+    <section class="view" data-view="topgift" hidden>
+      <div class="view-head">
+        <div>
+          <h1>Top Gift</h1>
+          <p class="lede">מציג את הצופה ששלח את המתנה הכי גדולה בלייב. מי שעוקף אותו תופס את המקום עם אנימציה.</p>
+        </div>
+      </div>
+
+      <div class="link-box" data-link="/topgift">
+        <div class="link-text">
+          <b>הקישור ל-LIVE Studio</b>
+          <span>הוספת מקור ← קישור. רזולוציה: 600 על 520</span>
+        </div>
+        <code dir="ltr"></code>
+        <button class="btn btn-sm" type="button" data-copy-link>העתק</button>
+      </div>
+      <div class="tg-grid">
+        <div class="panel tg-preview">
+          <div class="stage stage-tg" id="tgStage"><div class="stage-inner" data-w="600" data-h="520"></div></div>
+          <div class="tg-holder" id="tgHolder"></div>
+          <div class="tg-actions">
+            <button class="btn btn-primary" id="tgTest">שלח מתנה שעוקפת</button>
+            <button class="btn" id="tgReset">אפס</button>
+          </div>
+          <div class="confirm" id="tgConfirm" hidden>
+            <span>לאפס את Top Gift? המקום הראשון יימחק.</span>
+            <button class="btn btn-danger" id="tgResetYes">כן, אפס</button>
+            <button class="btn" id="tgResetNo">ביטול</button>
+          </div>
+        </div>
+
+        <form class="panel tg-settings" id="tgForm">
+          <fieldset>
+            <legend>טקסט</legend>
+            <label class="field" for="tg-title"><span>כותרת</span><input id="tg-title" name="title"></label>
+            <label class="field" for="tg-coinsLabel"><span>המילה אחרי המספר</span><input id="tg-coinsLabel" name="coinsLabel"></label>
+            <label class="field" for="tg-font"><span>פונט</span>
+              <select id="tg-font" name="font">
+                <option value="fredoka">עגול ושמן</option>
+                <option value="rubik">רוביק</option>
+                <option value="noto">נקי</option>
+              </select>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>צבעים וגדלים</legend>
+            <div class="color-row">
+              <label class="color" for="tg-titleColor"><input type="color" id="tg-titleColor" name="titleColor"><span>כותרת</span></label>
+              <label class="color" for="tg-nameColor"><input type="color" id="tg-nameColor" name="nameColor"><span>שם</span></label>
+              <label class="color" for="tg-coinsColor"><input type="color" id="tg-coinsColor" name="coinsColor"><span>מטבעות</span></label>
+              <label class="color" for="tg-outlineColor"><input type="color" id="tg-outlineColor" name="outlineColor"><span>קו מתאר</span></label>
+            </div>
+            <label class="field range" for="tg-titleSize"><span>גודל כותרת</span><input type="range" id="tg-titleSize" name="titleSize" min="20" max="100"><output></output></label>
+            <label class="field range" for="tg-nameSize"><span>גודל שם</span><input type="range" id="tg-nameSize" name="nameSize" min="20" max="100"><output></output></label>
+          </fieldset>
+
+          <fieldset>
+            <legend>מה מוצג</legend>
+            <label class="check" for="tg-showGift"><input type="checkbox" id="tg-showGift" name="showGift"><span>תמונת המתנה</span></label>
+            <label class="check" for="tg-showAvatar"><input type="checkbox" id="tg-showAvatar" name="showAvatar"><span>תמונת הפרופיל של הצופה</span></label>
+            <label class="check" for="tg-showCoins"><input type="checkbox" id="tg-showCoins" name="showCoins"><span>כמות המטבעות</span></label>
+            <label class="check" for="tg-outline"><input type="checkbox" id="tg-outline" name="outline"><span>קו מתאר לטקסט (קריא יותר על משחק)</span></label>
+          </fieldset>
+
+          <fieldset>
+            <legend>התנהגות</legend>
+            <label class="field" for="tg-mode"><span>מה נחשב "הכי גדול"</span>
+              <select id="tg-mode" name="mode">
+                <option value="send">כל השליחה (מתנה × כמות ברצף)</option>
+                <option value="single">מחיר של מתנה אחת</option>
+              </select>
+            </label>
+            <label class="check" for="tg-celebrate"><input type="checkbox" id="tg-celebrate" name="celebrate"><span>אנימציה וסאונד כשמישהו עוקף</span></label>
+            <label class="field" for="tg-sound"><span>סאונד עקיפה</span><select id="tg-sound" name="sound"></select></label>
+            <label class="check" for="tg-resetOnNewStream"><input type="checkbox" id="tg-resetOnNewStream" name="resetOnNewStream"><span>לאפס אוטומטית בכל לייב חדש</span></label>
+          </fieldset>
+          <p class="saved" id="tgSaved" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===== עוקבים ===== -->
+    <section class="view" data-view="followers" hidden>
+      <div class="view-head">
+        <div>
+          <h1>מונה עוקבים</h1>
+          <p class="lede">תמונת הפרופיל שלך ומתחתיה כמה עוקבים יש לך, בזמן אמת. כל עוקב חדש מעלה את המספר עם אנימציה.</p>
+        </div>
+      </div>
+      <div class="link-box" data-link="/followers">
+        <div class="link-text">
+          <b>הקישור ל-LIVE Studio</b>
+          <span>הוספת מקור ← קישור. רזולוציה: 500 על 520</span>
+        </div>
+        <code dir="ltr"></code>
+        <button class="btn btn-sm" type="button" data-copy-link>העתק</button>
+      </div>
+      <div class="tg-grid">
+        <div class="panel tg-preview">
+          <div class="stage stage-fol" id="folStage"><div class="stage-inner" data-w="500" data-h="520"></div></div>
+          <p class="tg-holder" id="folInfo"></p>
+          <div class="tg-actions">
+            <button class="btn btn-primary" type="button" data-test="follow">בדוק עוקב חדש</button>
+            <button class="btn" type="button" id="testUnfollow">בדוק הסרת עוקב</button>
+          </div>
+        </div>
+        <form class="panel tg-settings" id="folForm">
+          <fieldset>
+            <legend>טקסט</legend>
+            <label class="field" for="fol-label"><span>המילה מתחת למספר</span><input id="fol-label" name="label"></label>
+            <label class="field" for="fol-font"><span>פונט</span>
+              <select id="fol-font" name="font">
+                <option value="fredoka">עגול ושמן</option>
+                <option value="rubik">רוביק</option>
+                <option value="noto">נקי</option>
+              </select>
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>צבעים</legend>
+            <div class="color-row">
+              <label class="color" for="fol-ringColor"><input type="color" id="fol-ringColor" name="ringColor"><span>מסגרת</span></label>
+              <label class="color" for="fol-numberColor"><input type="color" id="fol-numberColor" name="numberColor"><span>מספר</span></label>
+              <label class="color" for="fol-labelColor"><input type="color" id="fol-labelColor" name="labelColor"><span>מילה</span></label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>מה מוצג</legend>
+            <label class="check" for="fol-showAvatar"><input type="checkbox" id="fol-showAvatar" name="showAvatar"><span>תמונת הפרופיל שלך</span></label>
+            <label class="check" for="fol-showSession"><input type="checkbox" id="fol-showSession" name="showSession"><span>כמה עוקבים הצטרפו והסירו בלייב הזה</span></label>
+            <label class="check" for="fol-outline"><input type="checkbox" id="fol-outline" name="outline"><span>קו מתאר לטקסט</span></label>
+            <label class="check" for="fol-celebrate"><input type="checkbox" id="fol-celebrate" name="celebrate"><span>אנימציה ו-+1 על עוקב חדש</span></label>
+            <label class="field" for="fol-sound"><span>סאונד לעוקב חדש</span><select id="fol-sound" name="sound"></select></label>
+            <label class="field" for="fol-goal"><span>יעד עוקבים (0 = בלי פס יעד)</span><input id="fol-goal" name="goal" type="number" min="0"></label>
+          </fieldset>
+          <fieldset>
+            <legend>מספר העוקבים</legend>
+            <p class="hint">המספר מתעדכן לבד כשאתה מתחבר ללייב. אם הוא עוד לא נכון, אפשר לתקן אותו כאן.</p>
+            <div class="inline-set">
+              <label class="field" for="folManual"><span>מספר עוקבים עכשיו</span><input id="folManual" type="number" min="0"></label>
+              <button class="btn" type="button" id="folManualSet">עדכן</button>
+            </div>
+          </fieldset>
+          <p class="saved" id="folSaved" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===== OBS ===== -->
+    <section class="view" data-view="obs" hidden>
+      <div class="view-head">
+        <div>
+          <h1>קישורים ללייב</h1>
+          <p class="lede">ב-TikTok LIVE Studio: הוספת מקור ← קישור ← מדביקים את הקישור. משאירים את "הפעלת סאונד" דלוק כדי שהסאונד יישמע בלייב. הכלי צריך להיות פתוח (החלון השחור של start.bat) בזמן הלייב.</p>
+        </div>
+      </div>
+      <ul class="obs-list" id="obsList"></ul>
+    </section>
+
+    <!-- ===== הגדרות ===== -->
+    <section class="view" data-view="prefs" hidden>
+      <div class="view-head"><div><h1>הגדרות</h1></div></div>
+      <div class="panel narrow run-box" id="runBox">
+        <h2>שהווידג'טים יעבדו תמיד</h2>
+        <p class="hint">הווידג'טים ב-LIVE Studio מופיעים רק כשהכלי רץ. במצב רקע הוא רץ בלי חלון שחור, אז אי אפשר לסגור אותו בטעות.</p>
+        <p class="run-state" id="runState"></p>
+        <label class="check" for="autostart"><input type="checkbox" id="autostart"><span>להפעיל את הכלי ברקע אוטומטית כשהמחשב נדלק</span></label>
+        <div class="tg-actions">
+          <button class="btn btn-primary" type="button" id="toBackground">העבר לרקע עכשיו</button>
+          <button class="btn" type="button" id="stopTool">עצור את הכלי</button>
+        </div>
+        <div class="confirm" id="stopConfirm" hidden>
+          <span>לעצור? הווידג'טים ב-LIVE Studio ייעלמו עד שתפעיל שוב את start.bat.</span>
+          <button class="btn btn-danger" type="button" id="stopYes">כן, עצור</button>
+          <button class="btn" type="button" id="stopNo">ביטול</button>
+        </div>
+      </div>
+      <div class="panel narrow key-box" id="keyBox">
+        <h2>מפתח חיבור לטיקטוק</h2>
+        <p class="hint local-only">לא חובה. צריך אותו רק אם מופיעה שגיאה על שירות חתימה עמוס.</p>
+        <p class="hint web-only">כדי שהחיבור ללייב יעבוד תמיד, לכל משתמש יש מפתח חינמי משלו. לוקח דקה:</p>
+        <ol class="key-steps web-only">
+          <li>נכנסים ל-<a href="https://www.eulerstream.com" target="_blank" rel="noopener">eulerstream.com</a> ונרשמים בחינם</li>
+          <li>יוצרים API Key בדשבורד ומעתיקים אותו</li>
+          <li>מדביקים כאן ולוחצים "שמור מפתח"</li>
+        </ol>
+        <label class="field" for="signKey"><span>מפתח Euler Stream</span>
+          <input id="signKey" type="password" autocomplete="off" placeholder="מדביקים כאן את המפתח" dir="ltr">
+        </label>
+        <p class="hint">המפתח נשמר רק אצלנו ולא מוצג לאף אחד.</p>
+        <button class="btn btn-primary" id="saveKey">שמור מפתח</button>
+      </div>
+    </section>
+
+  </main>
+  </div>
+</div>
+</div>
+
+<template id="ruleTpl">
+  <li class="rule">
+    <div class="rule-row">
+      <label class="switch"><input type="checkbox" class="r-enabled"><i></i></label>
+      <span class="rule-dot" aria-hidden="true"></span>
+      <div class="rule-info">
+        <b class="r-name"></b>
+        <small class="r-summary"></small>
+      </div>
+      <button class="btn btn-sm r-test">בדוק</button>
+      <button class="btn btn-sm r-edit" aria-expanded="false">ערוך</button>
+    </div>
+    <form class="rule-edit" hidden>
+      <label class="field"><span>שם החוק</span><input name="name"></label>
+      <label class="field"><span>מתי</span>
+        <select name="trigger">
+          <option value="gift">מתנה</option>
+          <option value="follow">עוקב חדש</option>
+          <option value="share">שיתוף</option>
+          <option value="like">לייקים</option>
+        </select>
+      </label>
+      <label class="field only-gift"><span>שם מתנה מסוים (באנגלית, לא חובה)</span><input name="giftName" placeholder="Rose, Lion"></label>
+      <label class="field only-gift only-like"><span class="min-label">מינימום מטבעות</span><input name="minCoins" type="number" min="0"></label>
+      <label class="field wide"><span>שורה ראשית</span><input name="title"></label>
+      <label class="field wide"><span>שורה שנייה</span><input name="subtitle"></label>
+      <p class="hint wide">אפשר לכתוב {name} לשם הצופה, {gift} לשם המתנה, {count} לכמות ו-{coins} למטבעות.</p>
+      <label class="field"><span>צבע</span>
+        <select name="style">
+          <option value="gift">זהב</option>
+          <option value="big">כתום (מסגרת בולטת)</option>
+          <option value="follow">ירוק</option>
+          <option value="share">סגול</option>
+          <option value="like">ורוד</option>
+        </select>
+      </label>
+      <label class="field"><span>שניות על המסך</span><input name="duration" type="number" min="1" max="30"></label>
+      <label class="field"><span>סאונד</span><select name="sound"></select></label>
+      <div class="edit-actions wide">
+        <button type="submit" class="btn btn-primary btn-sm">שמור חוק</button>
+        <button type="button" class="btn btn-sm r-delete">מחק חוק</button>
+        <span class="confirm-inline" hidden>
+          <span>בטוח?</span>
+          <button type="button" class="btn btn-danger btn-sm r-delete-yes">כן, מחק</button>
+        </span>
+      </div>
+    </form>
+  </li>
+</template>
+
+
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="overlay/sound.js"></script>
+<script src="overlay/alerts.js"></script>
+<script src="overlay/topgift.js"></script>
+<script src="overlay/effects.js"></script>
+<script src="overlay/media.js"></script>
+<script src="overlay/followers.js"></script>
+<script src="overlay/wheel.js"></script>
+<script src="panel.js"></script>
+</body>
+</html>

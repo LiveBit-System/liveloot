@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>LiveLoot - התראות</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Fredoka:wght@500;600;700&family=Noto+Sans+Hebrew:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/overlay/overlay.css">
+<style>html, body { margin: 0; background: transparent; overflow: hidden; width: 100vw; height: 100vh; }</style>
+</head>
+<body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/overlay/sound.js"></script>
+<script src="/overlay/alerts.js"></script>
+<script src="/overlay/effects.js"></script>
+<script src="/overlay/media.js"></script>
+<script>
+  // מסך 1 (/alerts) מציג התראות + פעולות של מסך 1. מסכים 2-4 (/screen/2...) מציגים רק את הפעולות שלהם
+  const muted = new URLSearchParams(location.search).has('muted');
+  const m = location.pathname.match(/\/screen\/(\d+)/);
+  const screen = m ? Number(m[1]) : 1;
+  const fx = EffectsView(document.body, { muted });
+  const media = MediaView(document.body, { muted });
+  const view = screen === 1 ? AlertsView(document.body, { muted }) : null;
+  const socket = io(location.pathname.startsWith('/w/') ? { query: { key: location.pathname.split('/')[2] } } : undefined);
+  if (view) socket.on('alert', a => view.enqueue(a));
+  if (screen === 1) socket.on('effect', e => fx.fire(e));
+  socket.on('action', a => {
+    if ((Number(a.screen) || 1) !== screen) return;
+    if ((a.effect && a.effect !== 'none') || (a.voice && a.voice !== 'none')) fx.fire(a);
+    media.play(a);
+  });
+  socket.on('clear', () => { fx.clear(); media.clear(); view?.clear(); });
+  socket.on('config', c => { fx.setVolume(c.fxVolume ?? 80); media.setVolume(c.fxVolume ?? 80); });
+</script>
+</body>
+</html>
