@@ -1,7 +1,7 @@
 {
   "name": "liveloot",
   "productName": "LiveLoot",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "LiveLoot - widgets and lucky wheel for TikTok LIVE",
   "author": "Liroy",
   "main": "main.js",

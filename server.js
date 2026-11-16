@@ -283,16 +283,34 @@ function learnGift(evt) {
   giftCatalog.push({ id: evt.giftId || 0, name: evt.gift, coins: evt.unitCoins || 0, image: evt.giftImage || '' });
   saveCatalog();
 }
+// רשימת כל המתנות של טיקטוק. מנסים כמה דרכים, כי לא כל דרך עובדת אצל כל משתמש
+const GIFT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+const giftsFrom = r => { const d = r?.data ?? r; return Array.isArray(d) ? d : (d?.gifts || d?.gifts_info?.gifts || []); };
+async function fetchGiftListPublic(roomId) {
+  const q = new URLSearchParams({ aid: '1988', app_language: 'en-US', app_name: 'tiktok_web', browser_language: 'en-US', browser_name: 'Mozilla', browser_platform: 'Win32', browser_version: '5.0', device_platform: 'web_pc', region: 'IL', priority_region: 'IL', cookie_enabled: 'true', screen_width: '1920', screen_height: '1080' });
+  if (roomId) q.set('room_id', String(roomId));
+  const res = await fetch('https://webcast.tiktok.com/webcast/gift/list/?' + q, { headers: { 'User-Agent': GIFT_UA, 'Accept': 'application/json', 'Referer': 'https://www.tiktok.com/' } });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return giftsFrom(await res.json());
+}
 async function refreshGiftCatalog() {
-  if (!connection) return { ok: false, message: 'צריך להתחבר ללייב כדי למשוך את המתנות מטיקטוק' };
-  try {
-    const n = setCatalogFromTikTok(await connection.fetchAvailableGifts());
-    console.log(`[gifts] loaded ${n} gifts from TikTok`);
-    return n ? { ok: true, count: giftCatalog.length } : { ok: false, message: 'טיקטוק לא החזירה מתנות. נסה שוב בעוד דקה' };
-  } catch (e) {
-    console.error('[gifts] fetch failed:', e?.message || e);
-    return { ok: false, message: 'לא הצלחתי למשוך את המתנות מטיקטוק. נסה שוב בעוד דקה' };
+  const roomId = connection?.roomId || state.lastRoomId || null;
+  const tries = [];
+  if (connection) {
+    tries.push(['signed', async () => giftsFrom(await connection.fetchAvailableGifts())]);
+    tries.push(['webclient', async () => giftsFrom(await connection.webClient.getJsonObjectFromWebcastApi('gift/list/', { ...connection.webClient.clientParams, room_id: roomId }, false))]);
   }
+  if (roomId) tries.push(['public+room', () => fetchGiftListPublic(roomId)]);
+  tries.push(['public', () => fetchGiftListPublic(null)]);
+  for (const [name, fn] of tries) {
+    try {
+      const list = await fn();
+      const n = setCatalogFromTikTok(list);
+      console.log(`[gifts] ${name}: ${n} gifts`);
+      if (n >= 20) return { ok: true, count: giftCatalog.length };
+    } catch (e) { console.error(`[gifts] ${name} failed:`, e?.message || e); }
+  }
+  return { ok: false, message: connection ? 'לא הצלחתי למשוך את כל המתנות מטיקטוק. נסה שוב בעוד דקה' : 'כדי למשוך את כל המתנות, תתחבר ללייב ואז תלחץ "רענן מטיקטוק"' };
 }
 
 function setStatus(patch) {
@@ -836,6 +854,7 @@ server.on('error', e => {
   throw e;
 });
 
+if (giftCatalog.length < 30) setTimeout(() => refreshGiftCatalog().catch(() => {}), 4000);
 global.__livelootNotice = msg => io.emit('appNotice', msg);
 server.listen(PORT, () => {
   if (global.__livelootReady) global.__livelootReady();
