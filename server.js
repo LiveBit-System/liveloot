@@ -162,7 +162,19 @@ const saveState = () => writeJson(STATE_FILE, state);
 // ---------- שרת ----------
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+// ---------- אבטחה: רק המחשב הזה יכול לדבר עם LiveLoot ----------
+// שמות שמותר לגשת דרכם: localhost, 127.0.0.1, ו-localtest.me (שמפנה למחשב עצמו)
+const LOCAL_HOST = h => { const n = String(h || '').toLowerCase().replace(/:\d+$/, ''); return n === 'localhost' || n === '127.0.0.1' || n === '[::1]' || n === 'localtest.me' || n.endsWith('.localtest.me'); };
+const LOCAL_ORIGIN = o => { if (!o || o === 'null') return !o; try { return LOCAL_HOST(new URL(o).host); } catch { return false; } };
+const io = new Server(server, {
+  // אתר זר שפתוח בדפדפן לא יכול להתחבר ל-LiveLoot ולשנות הגדרות
+  allowRequest: (req, cb) => cb(null, LOCAL_HOST(req.headers.host) && (!req.headers.origin || LOCAL_ORIGIN(req.headers.origin)))
+});
+app.use((req, res, next) => {
+  if (!LOCAL_HOST(req.headers.host)) return res.status(403).send('Forbidden');
+  if (req.method !== 'GET' && req.method !== 'HEAD' && req.headers.origin && !LOCAL_ORIGIN(req.headers.origin)) return res.status(403).send('Forbidden');
+  next();
+});
 
 app.use(express.json());
 app.use('/', express.static(path.join(ROOT, 'public')));
@@ -856,7 +868,7 @@ server.on('error', e => {
 
 if (giftCatalog.length < 30) setTimeout(() => refreshGiftCatalog().catch(() => {}), 4000);
 global.__livelootNotice = msg => io.emit('appNotice', msg);
-server.listen(PORT, () => {
+server.listen(PORT, '127.0.0.1', () => {
   if (global.__livelootReady) global.__livelootReady();
   console.log('');
   console.log('  LiveLoot is running');
