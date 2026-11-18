@@ -9,7 +9,7 @@
   --line-soft: #211B30;
   --text: #F2EFF9;
   --muted: #A39CB8;
-  --faint: #6F6887;
+  --faint: #8E87A8;
   --grape: #7C4DFF;
   --grape-soft: rgba(124, 77, 255, .16);
   --volt: #FFD23F;
@@ -360,7 +360,7 @@ svg { flex: 0 0 auto; }
 .run-box { display: grid; gap: 14px; margin-bottom: 20px; }
 .run-box .hint { margin: 0; }
 .run-state { margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 700; }
-.run-state::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--faint)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c, #6F6887) 20%, transparent); }
+.run-state::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--faint)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c, #8E87A8) 20%, transparent); }
 .run-state[data-mode="bg"] { --c: var(--fizz); }
 .run-state[data-mode="window"] { --c: var(--volt); }
 .offline-banner {
