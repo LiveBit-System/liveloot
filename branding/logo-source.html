@@ -1,0 +1,59 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Outfit;font-weight:600;src:url(https://cdn.jsdelivr.net/npm/@fontsource/outfit@5.1.0/files/outfit-latin-600-normal.woff2)}
+@font-face{font-family:Outfit;font-weight:800;src:url(https://cdn.jsdelivr.net/npm/@fontsource/outfit@5.1.0/files/outfit-latin-800-normal.woff2)}
+html,body{margin:0;background:transparent}
+.card{width:1400px;height:560px;display:flex;align-items:center;justify-content:center}
+.word{font:600 230px/1 Outfit;letter-spacing:-6px;position:relative;white-space:nowrap}
+.hide{color:transparent!important}
+.ov{position:absolute;overflow:visible}
+#icon{width:1024px;height:1024px;display:flex;align-items:center;justify-content:center}
+</style></head><body>
+<div class="card" id="light"><div class="word" style="color:#111"><span>L</span><span class="dl">ı</span><span>veLo</span><span class="o2 hide">o</span><span class="tt hide">t</span></div></div>
+<div class="card" id="dark"><div class="word" style="color:#fff"><span>L</span><span class="dl">ı</span><span>veLo</span><span class="o2 hide">o</span><span class="tt hide">t</span></div></div>
+<div class="card" id="color"><div class="word" style="color:#F2EFF9"><span>L</span><span class="dl">ı</span><span>veLo</span><span class="o2 hide">o</span><span class="tt hide">t</span></div></div>
+<div id="icon"></div>
+<script>
+const NS='http://www.w3.org/2000/svg';
+const crate=(body,line,q,lineCol)=>`<rect x="4" y="6" width="92" height="90" rx="16" fill="${body}"/><line x1="4" y1="36" x2="96" y2="36" stroke="${lineCol}" stroke-width="6"/><circle cx="16" cy="21" r="4.5" fill="${lineCol}"/><circle cx="84" cy="21" r="4.5" fill="${lineCol}"/><text x="50" y="88" text-anchor="middle" font-family="Outfit" font-weight="800" font-size="64" fill="${q}">?</text>`;
+const live=(c)=>`<path d="M-33 -18 A36 36 0 0 0 -33 18" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round" opacity=".6"/><path d="M33 -18 A36 36 0 0 1 33 18" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round" opacity=".6"/><circle r="23" fill="${c}"/>`;
+function metrics(t){const g=document.createElement('canvas').getContext('2d');g.font='600 230px Outfit';return g.measureText(t);}
+function svgAt(word,x,y,w,h,vb,html){const s=document.createElementNS(NS,'svg');s.setAttribute('class','ov');s.setAttribute('viewBox',vb);const W=word.getBoundingClientRect();Object.assign(s.style,{left:(x-W.left)+'px',top:(y-W.top)+'px',width:w+'px',height:h+'px'});s.innerHTML=html;word.appendChild(s);}
+function build(card,{body,line,q,dot}){
+  const word=card.querySelector('.word');
+  const mo=metrics('o'), r=card.querySelector('.o2').getBoundingClientRect();
+  const base=r.top+(r.height-(mo.fontBoundingBoxAscent+mo.fontBoundingBoxDescent))/2+mo.fontBoundingBoxAscent;
+  const ow=mo.actualBoundingBoxLeft+mo.actualBoundingBoxRight, oh=mo.actualBoundingBoxAscent+mo.actualBoundingBoxDescent;
+  svgAt(word, r.left-mo.actualBoundingBoxLeft, base-mo.actualBoundingBoxAscent, ow, oh, '0 0 100 100', crate(body,line,q,line));
+  const ri=card.querySelector('.dl').getBoundingClientRect(), mi=metrics('i'), md=metrics('ı');
+  const cx=ri.left+(ri.width)/2 + (md.actualBoundingBoxRight-md.actualBoundingBoxLeft)/2 - md.width/2 + 0;
+  const top=base-mi.actualBoundingBoxAscent, size=96;
+  svgAt(word, cx-size/2, top+15-size/2, size, size, '-50 -50 100 100', live(dot));
+}
+
+function customT(card,color){
+  // t בלי צורת צלב: הפס רק לצד ימין, והרגל מתעקלת ימינה
+  const word=card.querySelector('.word'), el=card.querySelector('.tt'), r=el.getBoundingClientRect();
+  const mt=metrics('t'), ml=metrics('l'), mo=metrics('o');
+  const base=r.top+(r.height-(mt.fontBoundingBoxAscent+mt.fontBoundingBoxDescent))/2+mt.fontBoundingBoxAscent;
+  const sw=ml.actualBoundingBoxLeft+ml.actualBoundingBoxRight;
+  const left=r.left-mt.actualBoundingBoxLeft, right=r.left+mt.actualBoundingBoxRight;
+  const top=base-mt.actualBoundingBoxAscent, xh=base-mo.actualBoundingBoxAscent+sw/2;
+  const stemX=left+sw*0.75, R=sw*1.15;
+  const W=word.getBoundingClientRect();
+  const s=document.createElementNS(NS,'svg');s.setAttribute('class','ov');
+  Object.assign(s.style,{left:(-W.left)+'px',top:(-W.top)+'px',width:'1px',height:'1px'});
+  s.innerHTML=`<path d="M${stemX} ${top} L${stemX} ${base-sw/2-R} A${R} ${R} 0 0 0 ${stemX+R} ${base-sw/2} L${right+sw*0.15} ${base-sw/2}" fill="none" stroke="${color}" stroke-width="${sw}"/>
+    <path d="M${stemX-sw/2} ${xh} L${right+sw*0.15} ${xh}" stroke="${color}" stroke-width="${sw}"/>`;
+  word.appendChild(s);
+}
+document.fonts.ready.then(()=>{
+  customT(document.getElementById('light'),'#111');customT(document.getElementById('dark'),'#fff');customT(document.getElementById('color'),'#F2EFF9');
+  build(document.getElementById('light'),{body:'#111',line:'#fff',q:'#fff',dot:'#FF2D55'});
+  build(document.getElementById('dark'),{body:'#fff',line:'#111',q:'#111',dot:'#FF2D55'});
+  build(document.getElementById('color'),{body:'#7C4DFF',line:'#FFD23F',q:'#fff',dot:'#FF3E8A'});
+  // אייקון: הארגז לבד עם נקודת לייב
+  const ic=document.getElementById('icon');
+  ic.innerHTML=`<svg width="1024" height="1024" viewBox="0 0 100 100"><rect x="0" y="0" width="100" height="100" rx="22" fill="#0C0913"/><g transform="translate(16 20) scale(.68)">${crate('#7C4DFF','#FFD23F','#fff','#FFD23F')}</g><g transform="translate(80 20)"><circle r="7.5" fill="#FF3E8A"/></g></svg>`;
+  document.body.dataset.ready=1;
+});
+</script></body></html>
