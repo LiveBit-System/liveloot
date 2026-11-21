@@ -31,8 +31,23 @@
     if ((a.effect && a.effect !== 'none') || (a.voice && a.voice !== 'none')) fx.fire(a);
     media.play(a);
   });
-  socket.on('clear', () => { fx.clear(); media.clear(); view?.clear(); });
-  socket.on('config', c => { fx.setVolume(c.fxVolume ?? 80); media.setVolume(c.fxVolume ?? 80); });
+  // צ'אט מוקרא (PRO): תור, כדי שהודעות לא ידברו אחת על השנייה
+  const speakQ = []; let speaking = null, fxVol = 80;
+  async function speakNext() {
+    if (speaking || !speakQ.length) return;
+    const m = speakQ.shift();
+    try {
+      const r = await fetch(`/api/tts?voice=${encodeURIComponent(m.voice || 'avri')}&text=${encodeURIComponent(m.text)}`);
+      if (!r.ok) throw new Error('tts');
+      speaking = new Audio(URL.createObjectURL(await r.blob()));
+      speaking.volume = Math.min(1, (m.volume ?? 100) / 100 * fxVol / 100);
+      speaking.onended = speaking.onerror = () => { speaking = null; speakNext(); };
+      await speaking.play();
+    } catch { speaking = null; setTimeout(speakNext, 300); }
+  }
+  if (screen === 1 && !muted) socket.on('chatSpeak', m => { if (speakQ.length < 5) { speakQ.push(m); speakNext(); } });
+  socket.on('clear', () => { fx.clear(); media.clear(); view?.clear(); speakQ.length = 0; if (speaking) { speaking.pause(); speaking = null; } });
+  socket.on('config', c => { fxVol = c.fxVolume ?? 80; fx.setVolume(fxVol); media.setVolume(fxVol); });
 </script>
 </body>
 </html>

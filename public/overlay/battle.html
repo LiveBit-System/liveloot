@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>LiveLoot - קרב מתנות</title>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/overlay/overlay.css">
+<style>html, body { margin: 0; background: transparent; overflow: hidden; width: 100vw; height: 100vh; }</style>
+</head>
+<body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/overlay/sound.js"></script>
+<script src="/overlay/alerts.js"></script>
+<script src="/overlay/games.js"></script>
+<script>
+  const view = BattleView(document.body, { muted: new URLSearchParams(location.search).has('muted') });
+  const socket = io();
+  socket.on('config', c => view.setSettings(c.battle || {}));
+  socket.on('battle', d => view.setData(d));
+  // ווידג'ט של PRO
+  socket.on('pro', p => { document.body.style.visibility = p && p.active ? '' : 'hidden'; });
+</script>
+</body>
+</html>

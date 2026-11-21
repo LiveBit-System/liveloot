@@ -115,6 +115,20 @@ const DEFAULT_WHEEL = {
   ]
 };
 
+// ---------- PRO: טבלת מובילים, קרב מתנות, מכירה פומבית, צ'אט מוקרא ----------
+const DEFAULT_BOARD = {
+  title: 'התורמים הגדולים', count: 5, period: 'live', weekEndDay: 4, font: 'fredoka',
+  titleColor: '#FFFFFF', nameColor: '#FFFFFF', coinsColor: '#FFD23F', accentColor: '#7C4DFF', outlineColor: '#200A3A',
+  showAvatar: true, celebrate: true, sound: 'builtin:pop'
+};
+const DEFAULT_BATTLE = {
+  mode: 'gift', durationSec: 180, aName: 'כחולים', bName: 'אדומים', aColor: '#3D8BFF', bColor: '#FF3E5E',
+  aGifts: ['Rose'], bGifts: ['Heart Me'], joinA: '1', joinB: '2', likes: false,
+  winText: '{team} ניצחו!', font: 'fredoka', sound: 'builtin:fanfare'
+};
+const DEFAULT_AUCTION = { prize: 'בוחר את המשחק הבא', durationSec: 60, snipeSec: 10, font: 'fredoka', accentColor: '#FFD23F', sound: 'builtin:fanfare' };
+const DEFAULT_CHATTTS = { enabled: false, voice: 'avri', who: 'gifters', minCoins: 1, maxLen: 120, cooldownSec: 20, blockLinks: true, banned: '', readName: true, volume: 100 };
+
 const DEFAULT_CONFIG = {
   wheel: DEFAULT_WHEEL,
   followers: DEFAULT_FOLLOWERS,
@@ -124,6 +138,7 @@ const DEFAULT_CONFIG = {
   topGift: DEFAULT_TOPGIFT,
   topStreak: DEFAULT_STREAK,
   timer: DEFAULT_TIMER,
+  board: DEFAULT_BOARD, battle: DEFAULT_BATTLE, auction: DEFAULT_AUCTION, chatTts: DEFAULT_CHATTTS,
   rules: [
     { id: 'r1', enabled: true, name: 'כל מתנה', trigger: 'gift', giftName: '', minCoins: 0,
       title: '{name}', subtitle: 'שלח {gift} ×{count}', duration: 5, sound: 'builtin:coin', style: 'gift' },
@@ -151,6 +166,10 @@ if (config.topGift && !config.topGift.period) config.topGift.period = config.top
 config.topGift = { ...DEFAULT_TOPGIFT, ...(config.topGift || {}) };
 config.topStreak = { ...DEFAULT_STREAK, ...(config.topStreak || {}) };
 config.timer = { ...DEFAULT_TIMER, ...(config.timer || {}) };
+config.board = { ...DEFAULT_BOARD, ...(config.board || {}) };
+config.battle = { ...DEFAULT_BATTLE, ...(config.battle || {}) };
+config.auction = { ...DEFAULT_AUCTION, ...(config.auction || {}) };
+config.chatTts = { ...DEFAULT_CHATTTS, ...(config.chatTts || {}) };
 // פעולות ואירועים: פעולה = מה קורה על המסך, אירוע = מתי זה קורה. האפקטים הישנים הופכים לפעולות + אירועים
 if (!Array.isArray(config.actions) || !Array.isArray(config.events)) {
   const old = Array.isArray(config.effects) ? config.effects : DEFAULT_EFFECTS;
@@ -347,6 +366,7 @@ app.get('/alerts', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/al
 app.get('/topgift', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/topgift.html')));
 app.get('/topstreak', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/topstreak.html')));
 app.get('/timer', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/timer.html')));
+for (const n of ['leaderboard', 'battle', 'auction']) app.get('/' + n, (req, res) => res.sendFile(path.join(ROOT, `public/overlay/${n}.html`)));
 app.get('/followers', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/followers.html')));
 app.get('/wheel', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/wheel.html')));
 app.get('/screen/:n', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/alerts.html')));
@@ -530,6 +550,172 @@ function checkWeeks() {
   }
 }
 setInterval(checkWeeks, 60 * 1000);
+
+// ---------- טבלת מובילים ----------
+if (!state.board || typeof state.board !== 'object') state.board = { list: {}, at: Date.now() };
+const boardTop = () => Object.values(state.board.list).sort((a, b) => b.coins - a.coins).slice(0, 10);
+function emitBoard(extra = {}) { io.emit('board', { list: boardTop(), ...extra }); }
+function resetBoard() { state.board = { list: {}, at: Date.now() }; saveState(); emitBoard({ reset: true }); }
+function updateBoard(evt) {
+  if (!evt.coins) return;
+  if (config.board.period === 'week' && state.board.at < weekStart(config.board.weekEndDay)) resetBoard();
+  const key = (evt.uid || evt.name || '').toLowerCase();
+  if (!key) return;
+  const before = boardTop().map(x => x.key);
+  const row = state.board.list[key] || { key, name: evt.name, avatar: '', coins: 0 };
+  row.coins += evt.coins; row.name = evt.name || row.name; row.avatar = evt.avatar || row.avatar; row.at = Date.now();
+  state.board.list[key] = row;
+  // שומרים רק את ה-200 הגדולים, שהקובץ לא יתנפח
+  const all = Object.values(state.board.list);
+  if (all.length > 200) { all.sort((a, b) => b.coins - a.coins).slice(200).forEach(x => delete state.board.list[x.key]); }
+  saveState();
+  const after = boardTop().map(x => x.key);
+  const oldRank = before.indexOf(key), newRank = after.indexOf(key);
+  const passed = newRank >= 0 && newRank < (Number(config.board.count) || 5) && (oldRank === -1 || newRank < oldRank) ? { key, rank: newRank, name: row.name } : null;
+  emitBoard({ passed });
+}
+
+// ---------- קרב מתנות ----------
+let battle = { running: false, endsAt: 0, a: 0, b: 0, joined: {}, winner: null, last: null };
+const battleInfo = () => ({ running: battle.running, endsAt: battle.endsAt, a: battle.a, b: battle.b, winner: battle.winner, last: battle.last, now: Date.now() });
+const emitBattle = () => io.emit('battle', battleInfo());
+let battleTimer = null;
+function battleCmd(op) {
+  const b = config.battle;
+  if (op === 'start') {
+    battle = { running: true, endsAt: Date.now() + Math.max(10, Number(b.durationSec) || 180) * 1000, a: 0, b: 0, joined: {}, winner: null, last: null };
+    clearTimeout(battleTimer); battleTimer = setTimeout(() => battleCmd('end'), battle.endsAt - Date.now());
+  } else if (op === 'end' && battle.running) {
+    battle.running = false; clearTimeout(battleTimer);
+    battle.winner = battle.a === battle.b ? 'tie' : battle.a > battle.b ? 'a' : 'b';
+  } else if (op === 'reset') {
+    clearTimeout(battleTimer); battle = { running: false, endsAt: 0, a: 0, b: 0, joined: {}, winner: null, last: null };
+  } else if (op === 'add30' && battle.running) {
+    battle.endsAt += 30000; clearTimeout(battleTimer); battleTimer = setTimeout(() => battleCmd('end'), battle.endsAt - Date.now());
+  }
+  emitBattle();
+}
+const norm = v => String(v || '').trim().toLowerCase();
+function battleFromEvent(evt) {
+  if (!battle.running) return;
+  const b = config.battle, who = norm(evt.uid || evt.name);
+  if (b.mode === 'chat' && evt.type === 'chat') {
+    const t = norm(evt.text);
+    if (t === norm(b.joinA)) battle.joined[who] = 'a'; else if (t === norm(b.joinB)) battle.joined[who] = 'b';
+    return;
+  }
+  let side = null, pts = 0;
+  if (evt.type === 'gift') {
+    pts = Number(evt.coins) || 0;
+    if (b.mode === 'chat') side = battle.joined[who] || null;
+    else {
+      const g = norm(evt.gift);
+      if ((b.aGifts || []).some(x => norm(x) === g)) side = 'a';
+      else if ((b.bGifts || []).some(x => norm(x) === g)) side = 'b';
+    }
+  } else if (evt.type === 'like' && b.likes && b.mode === 'chat') {
+    side = battle.joined[who] || null; pts = Math.floor((Number(evt.count) || 0) / 10);
+  }
+  if (!side || !pts) return;
+  battle[side] += pts;
+  battle.last = { side, name: evt.name, pts, at: Date.now() };
+  emitBattle();
+}
+
+// ---------- מכירה פומבית ----------
+let auction = { running: false, endsAt: 0, bids: {}, leader: null, winner: null };
+const auctionTop = () => Object.values(auction.bids).sort((a, b) => b.coins - a.coins).slice(0, 3);
+const auctionInfo = () => ({ running: auction.running, endsAt: auction.endsAt, top: auctionTop(), winner: auction.winner, now: Date.now() });
+const emitAuction = (extra = {}) => io.emit('auction', { ...auctionInfo(), ...extra });
+let auctionTimer = null;
+function armAuction() { clearTimeout(auctionTimer); auctionTimer = setTimeout(() => auctionCmd('end'), Math.max(0, auction.endsAt - Date.now())); }
+function auctionCmd(op) {
+  if (op === 'start') {
+    auction = { running: true, endsAt: Date.now() + Math.max(10, Number(config.auction.durationSec) || 60) * 1000, bids: {}, leader: null, winner: null };
+    armAuction();
+  } else if (op === 'end' && auction.running) {
+    auction.running = false; clearTimeout(auctionTimer);
+    auction.winner = auctionTop()[0] || null;
+  } else if (op === 'reset') {
+    clearTimeout(auctionTimer); auction = { running: false, endsAt: 0, bids: {}, leader: null, winner: null };
+  }
+  emitAuction();
+}
+function auctionFromEvent(evt) {
+  if (!auction.running || evt.type !== 'gift' || !evt.coins) return;
+  const key = norm(evt.uid || evt.name);
+  const row = auction.bids[key] || { key, name: evt.name, avatar: '', coins: 0 };
+  row.coins += evt.coins; row.avatar = evt.avatar || row.avatar; row.name = evt.name || row.name;
+  auction.bids[key] = row;
+  const leader = auctionTop()[0];
+  const newLeader = leader && leader.key !== auction.leader;
+  auction.leader = leader && leader.key;
+  // הגנה מ"צלפים": מתנה בשניות האחרונות מאריכה את הזמן
+  const snipe = Number(config.auction.snipeSec) || 0;
+  let extended = false;
+  if (snipe > 0 && auction.endsAt - Date.now() < snipe * 1000) { auction.endsAt = Date.now() + snipe * 1000; armAuction(); extended = true; }
+  emitAuction({ newLeader: newLeader ? leader.name : null, extended });
+}
+
+// ---------- צ'אט מוקרא (רק מי ששלח מתנה, עם סינון) ----------
+const chatSpoke = new Map();
+function chatTtsFromEvent(evt) {
+  const c = config.chatTts;
+  if (!c.enabled || !isPro() || evt.type !== 'chat' || !evt.text) return;
+  const who = norm(evt.uid || evt.name);
+  if (c.who === 'gifters') {
+    const d = state.session?.donors?.[who];
+    if (!d || d.coins < (Number(c.minCoins) || 1)) return;
+  }
+  const now = Date.now();
+  if (now - (chatSpoke.get(who) || 0) < (Number(c.cooldownSec) || 0) * 1000) return;
+  let text = String(evt.text).trim();
+  if (c.blockLinks && /(https?:\/\/|www\.|\.com|\.co\.il|\.net)/i.test(text)) return;
+  const banned = String(c.banned || '').split(/[,\n]/).map(x => x.trim().toLowerCase()).filter(Boolean);
+  if (banned.some(w => text.toLowerCase().includes(w))) return;
+  text = text.slice(0, Math.max(10, Number(c.maxLen) || 120));
+  if (!text.replace(/[^\p{L}\p{N}]/gu, '')) return;
+  chatSpoke.set(who, now);
+  io.emit('chatSpeak', { text: (c.readName ? `${evt.name} אומר: ` : '') + text, voice: c.voice, volume: Number(c.volume) || 100 });
+}
+
+// ---------- סיכום לייב ----------
+if (!Array.isArray(state.recaps)) state.recaps = [];
+function newSession(roomId) {
+  const s = state.session;
+  if (s && (s.coins || s.follows || s.gifts)) {
+    s.endedAt = s.endedAt || Date.now();
+    s.top = Object.values(s.donors || {}).sort((a, b) => b.coins - a.coins).slice(0, 5);
+    delete s.donors;
+    state.recaps.unshift(s);
+    state.recaps = state.recaps.slice(0, 20);
+  }
+  state.session = { roomId: roomId || null, startedAt: Date.now(), coins: 0, gifts: 0, follows: 0, shares: 0, likes: 0, biggest: null, donors: {} };
+  saveState();
+}
+if (!state.session) newSession(state.lastRoomId);
+function sessionFromEvent(evt) {
+  if (evt.test) return;
+  const s = state.session;
+  if (evt.type === 'gift') {
+    s.coins += Number(evt.coins) || 0; s.gifts += Number(evt.count) || 1;
+    const key = norm(evt.uid || evt.name);
+    const d = s.donors[key] || { name: evt.name, avatar: '', coins: 0 };
+    d.coins += Number(evt.coins) || 0; d.avatar = evt.avatar || d.avatar; d.name = evt.name || d.name;
+    s.donors[key] = d;
+    if (!s.biggest || (evt.unitCoins || 0) > s.biggest.unitCoins) s.biggest = { name: evt.name, gift: evt.gift, unitCoins: evt.unitCoins || 0, count: evt.count || 1 };
+  } else if (evt.type === 'follow') s.follows++;
+  else if (evt.type === 'share') s.shares++;
+  else if (evt.type === 'like') s.likes += Number(evt.count) || 0;
+  s.lastAt = Date.now();
+  clearTimeout(sessionFromEvent.t); sessionFromEvent.t = setTimeout(saveState, 3000);
+}
+function recapData() {
+  const s = state.session || {};
+  const cur = { ...s, top: Object.values(s.donors || {}).sort((a, b) => b.coins - a.coins).slice(0, 5) };
+  delete cur.donors;
+  return { current: cur, history: state.recaps };
+}
 
 // ---------- Top Streak: הרצף הכי ארוך ----------
 function updateTopStreak(evt) {
@@ -840,7 +1026,9 @@ function handleEvent(evt) {
   evt.rule = rule ? rule.name : null;
   pushFeed(evt);
   if (rule) sendAlert(rule, evt);
-  if (evt.type === 'gift') { checkWeeks(); updateTopGift(evt); updateTopStreak(evt); trackDonor(evt); }
+  if (evt.type === 'gift') { checkWeeks(); updateTopGift(evt); updateTopStreak(evt); trackDonor(evt); updateBoard(evt); auctionFromEvent(evt); }
+  sessionFromEvent(evt);
+  battleFromEvent(evt);
   timerFromEvent(evt);
   if (evt.type === 'follow') addFollower(evt);
   const wt = config.wheel;
@@ -909,9 +1097,11 @@ async function connectLive() {
       name: displayName(data), uid: userId(data), avatar: pic(data), text: data.comment || data.content || '' };
     pushFeed(evt);
     fireEvents(evt);
+    battleFromEvent(evt);
+    chatTtsFromEvent(evt);
   });
   connection.on(WebcastEvent.ROOM_USER, data => setStatus({ viewers: Number(data.viewerCount ?? data.total ?? 0) }));
-  connection.on(WebcastEvent.STREAM_END, () => setStatus({ state: 'offline', message: 'הלייב הסתיים' }));
+  connection.on(WebcastEvent.STREAM_END, () => { setStatus({ state: 'offline', message: 'הלייב הסתיים' }); if (state.session) { state.session.endedAt = Date.now(); saveState(); } io.emit('recap', recapData()); });
   connection.on(ControlEvent.DISCONNECTED, () => {
     if (status.state === 'live') setStatus({ state: 'offline', message: 'החיבור נותק' });
   });
@@ -925,6 +1115,8 @@ async function connectLive() {
       state.lastRoomId = s.roomId;
       followSpun.clear();
       state.donors = {}; // תורמים של הלייב הזה (לפאנל המנהל)
+      newSession(s.roomId);
+      if (config.board.period === 'live') resetBoard();
       state.followers.session = 0; // לייב חדש: סופרים מחדש את העוקבים של הלייב
       state.followers.lost = 0;
       if (config.topGift.period === 'live') resetTopGift(); else saveState();
@@ -1035,6 +1227,25 @@ io.on('connection', socket => {
     const f = state.followers;
     emitFollowers({ count: Math.max(0, f.count - 1), lost: (f.lost || 0) + 1, lostNow: 1 });
   });
+  socket.emit('board', { list: boardTop() });
+  socket.on('resetBoard', () => resetBoard());
+  // בדיקה למשחקים: מתנה מדומה מצופה אקראי
+  socket.on('testGame', () => {
+    const name = SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)], gift = Math.random() < .5 ? 'Rose' : 'Heart Me', n = 5 + Math.floor(Math.random() * 120);
+    handleEvent({ type: 'gift', name, uid: name, gift, count: n, unitCoins: 1, coins: n, test: true });
+  });
+  socket.emit('battle', battleInfo());
+  socket.on('battleCmd', op => battleCmd(String(op)));
+  socket.emit('auction', auctionInfo());
+  socket.on('auctionCmd', op => auctionCmd(String(op)));
+  socket.emit('recap', recapData());
+  socket.on('getRecap', () => socket.emit('recap', recapData()));
+  // הסקריפט של המשחקים בפאנל נטען אחרי שהחיבור כבר נפתח, אז הוא מבקש את המצב מחדש
+  socket.on('getGames', () => {
+    socket.emit('config', config); socket.emit('board', { list: boardTop() });
+    socket.emit('battle', battleInfo()); socket.emit('auction', auctionInfo()); socket.emit('recap', recapData());
+  });
+  socket.on('testChatSpeak', () => io.emit('chatSpeak', { text: 'luna.live אומר: איזה לייב מטורף!', voice: config.chatTts.voice, volume: Number(config.chatTts.volume) || 100 }));
   socket.emit('pro', proInfo());
   if (admin.token) { socket.emit('proAdmin', adminList()); socket.emit('proDonors', donorsList()); }
   socket.on('proRefresh', () => fetchProList());
@@ -1108,6 +1319,7 @@ io.on('connection', socket => {
     if (patch.wheel) patch.wheel = { ...config.wheel, ...patch.wheel };
     if (patch.topStreak) patch.topStreak = { ...config.topStreak, ...patch.topStreak };
     if (patch.timer) patch.timer = { ...config.timer, ...patch.timer };
+    for (const k of ['board', 'battle', 'auction', 'chatTts']) if (patch[k]) patch[k] = { ...config[k], ...patch[k] };
     config = { ...config, ...patch };
     saveConfig();
     io.emit('config', config);

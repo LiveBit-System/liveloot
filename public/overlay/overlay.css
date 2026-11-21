@@ -551,3 +551,69 @@
 /* סימן מים בגרסה החינמית */
 .lv-cw-wm { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); padding: 6px 16px; border-radius: 999px;
   background: rgba(14, 10, 26, .62); color: #fff; font: 800 22px/1 'Rubik', system-ui, sans-serif; letter-spacing: .02em; opacity: .85; pointer-events: none; }
+
+/* ---------- PRO: טבלת מובילים ---------- */
+.lv-board, .lv-battle, .lv-auction { position: absolute; inset: 0; font-family: 'Fredoka', 'Rubik', sans-serif; color: #fff; direction: rtl; }
+.lv-board[data-font="rubik"], .lv-battle[data-font="rubik"], .lv-auction[data-font="rubik"] { font-family: 'Rubik', sans-serif; }
+.lv-board[data-font="noto"], .lv-battle[data-font="noto"], .lv-auction[data-font="noto"] { font-family: 'Noto Sans Hebrew', 'Rubik', sans-serif; }
+.lv-board { display: flex; flex-direction: column; align-items: stretch; padding: 16px 22px; gap: 10px; }
+.lv-bd-title { align-self: center; font-weight: 800; font-size: 36px; color: var(--bd-title); background: var(--bd-ink); padding: 6px 26px; border-radius: 999px; transform: rotate(-2deg); box-shadow: 0 6px 0 rgba(0,0,0,.25); }
+.lv-bd-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.lv-bd-row { display: flex; align-items: center; gap: 14px; padding: 8px 16px 8px 18px; border-radius: 22px; background: var(--bd-accent); border: 5px solid var(--bd-ink); box-shadow: 6px 6px 0 var(--bd-ink); font-size: 30px; font-weight: 700; transition: transform .3s; }
+.lv-bd-row.r1 { background: linear-gradient(90deg, #FFD23F, #FF9E3D); color: #241600; font-size: 34px; }
+.lv-bd-row.r1 .lv-bd-name, .lv-bd-row.r1 .lv-bd-coins { color: #241600; }
+.lv-bd-row.up { animation: lv-bd-up .7s cubic-bezier(.2,1.6,.4,1); }
+.lv-bd-rank { width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--bd-ink); color: #fff; font-weight: 800; font-size: 26px; }
+.lv-bd-av { width: 52px; height: 52px; flex: none; border-radius: 50%; object-fit: cover; border: 4px solid var(--bd-ink); background: #fff; }
+.lv-av-letter { display: grid; place-items: center; color: var(--bd-ink, #200A3A); font-weight: 800; font-size: 26px; background: #FFD23F; }
+.lv-bd-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--bd-name); }
+.lv-bd-coins { display: flex; align-items: center; gap: 6px; color: var(--bd-coins); font-weight: 800; direction: ltr; }
+.lv-bd-coins svg, .lv-au-list svg, .lv-au-win svg { width: 1em; height: 1em; }
+.lv-bd-empty { text-align: center; font-size: 28px; opacity: .85; padding: 14px; background: rgba(20,10,40,.6); border-radius: 18px; }
+.lv-bd-pass { position: absolute; left: 50%; bottom: 10px; translate: -50% 0; background: #FF3E8A; color: #fff; font-weight: 800; font-size: 28px; padding: 8px 22px; border-radius: 999px; border: 4px solid #200A3A; white-space: nowrap; animation: lv-pop-out 3s ease forwards; }
+@keyframes lv-bd-up { 0% { transform: scale(1.18) rotate(-2deg); } 100% { transform: none; } }
+@keyframes lv-pop-out { 0% { opacity: 0; transform: scale(.6); } 12% { opacity: 1; transform: scale(1.08); } 20% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- PRO: קרב מתנות ---------- */
+.lv-battle { display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 18px 26px; }
+.lv-bt-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; font-weight: 800; }
+.lv-bt-team { font-size: 40px; padding: 4px 22px; border-radius: 16px; border: 5px solid #200A3A; box-shadow: 5px 5px 0 #200A3A; }
+.lv-bt-team.a { background: var(--bt-a); } .lv-bt-team.b { background: var(--bt-b); }
+.lv-bt-clock { font-size: 46px; font-weight: 800; -webkit-text-stroke: 7px #200A3A; paint-order: stroke fill; }
+.lv-battle.final .lv-bt-clock { color: #FFD23F; animation: lv-tm-pulse 1s ease-in-out infinite; }
+.lv-bt-bar { position: relative; height: 54px; border-radius: 999px; border: 6px solid #200A3A; overflow: visible; display: flex; background: #200A3A; box-shadow: 6px 6px 0 rgba(0,0,0,.3); }
+.lv-bt-fill { height: 100%; transition: width .6s cubic-bezier(.2,1.2,.4,1); }
+.lv-bt-fill.a { background: var(--bt-a); border-radius: 0 999px 999px 0; } .lv-bt-fill.b { background: var(--bt-b); border-radius: 999px 0 0 999px; }
+.lv-bt-knot { position: absolute; top: 50%; width: 44px; height: 44px; margin-top: -22px; border-radius: 50%; background: #FFD23F; border: 6px solid #200A3A; transition: left .6s cubic-bezier(.2,1.2,.4,1); }
+.lv-bt-scores { display: flex; justify-content: space-between; font-size: 38px; font-weight: 800; -webkit-text-stroke: 6px #200A3A; paint-order: stroke fill; }
+.lv-bt-hint { text-align: center; font-size: 22px; font-weight: 700; background: rgba(20,10,40,.7); border-radius: 14px; padding: 6px 12px; }
+.lv-battle:not(.idle) .lv-bt-hint { display: none; }
+.lv-bt-last { text-align: center; font-size: 26px; font-weight: 700; opacity: 0; }
+.lv-bt-last.show { animation: lv-pop-out 2.4s ease forwards; }
+.lv-battle.hit-a .lv-bt-team.a, .lv-battle.hit-b .lv-bt-team.b { animation: lv-tm-bump .45s cubic-bezier(.2,1.6,.4,1); }
+.lv-bt-win { position: absolute; inset: 0; display: none; place-items: center; font-size: 72px; font-weight: 800; -webkit-text-stroke: 10px #200A3A; paint-order: stroke fill; background: rgba(20,10,40,.88); border-radius: 24px; text-align: center; }
+.lv-bt-win.show { display: grid; animation: lv-pop-in .45s cubic-bezier(.2,1.6,.4,1) both; }
+.lv-bt-win.a { color: var(--bt-a); } .lv-bt-win.b { color: var(--bt-b); } .lv-bt-win.tie { color: #FFD23F; }
+
+/* ---------- PRO: מכירה פומבית ---------- */
+.lv-auction { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 22px; }
+.lv-au-tag { background: #FF3E8A; font-weight: 800; font-size: 26px; padding: 4px 18px; border-radius: 999px; border: 4px solid #200A3A; transform: rotate(-3deg); }
+.lv-au-prize { font-weight: 800; font-size: 40px; text-align: center; -webkit-text-stroke: 7px #200A3A; paint-order: stroke fill; color: var(--au-accent); max-width: 100%; }
+.lv-au-clock { font-weight: 800; font-size: 60px; -webkit-text-stroke: 9px #200A3A; paint-order: stroke fill; }
+.lv-auction.final .lv-au-clock { color: #FF3E5E; animation: lv-tm-pulse .8s ease-in-out infinite; }
+.lv-au-list { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 8px; }
+.lv-au-list li { display: flex; align-items: center; gap: 12px; background: #7C4DFF; border: 5px solid #200A3A; border-radius: 18px; padding: 6px 14px; font-size: 28px; font-weight: 700; }
+.lv-au-list li.r1 { background: var(--au-accent); color: #241600; font-size: 32px; }
+.lv-au-list li.empty { justify-content: center; background: rgba(20,10,40,.7); }
+.lv-au-av { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 4px solid #200A3A; flex: none; }
+.lv-au-list .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lv-au-list .cn { display: flex; align-items: center; gap: 6px; direction: ltr; font-weight: 800; }
+.lv-auction.idle .lv-au-clock, .lv-auction.idle .lv-au-list { display: none; }
+.lv-au-flash { position: absolute; top: 40%; left: 50%; translate: -50% 0; font-weight: 800; font-size: 44px; color: #fff; background: #FF3E8A; border: 5px solid #200A3A; padding: 6px 24px; border-radius: 999px; opacity: 0; white-space: nowrap; pointer-events: none; }
+.lv-au-flash.show { animation: lv-pop-out 1.8s ease forwards; }
+.lv-au-win { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 6px; background: rgba(20,10,40,.9); border-radius: 24px; }
+.lv-au-win.show { display: flex; animation: lv-pop-in .45s cubic-bezier(.2,1.6,.4,1) both; }
+.lv-au-win small { font-size: 30px; font-weight: 700; color: var(--au-accent); }
+.lv-au-win b { font-size: 64px; -webkit-text-stroke: 9px #200A3A; paint-order: stroke fill; }
+.lv-au-win span { display: flex; gap: 8px; align-items: center; font-size: 36px; font-weight: 800; direction: ltr; color: var(--au-accent); }
+@keyframes lv-pop-in { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }

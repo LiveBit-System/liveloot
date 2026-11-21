@@ -691,3 +691,14 @@ svg { flex: 0 0 auto; }
 .modal { width: min(420px, 100%); display: grid; gap: 12px; justify-items: stretch; text-align: center; }
 .modal .brand-logo { height: 40px; justify-self: center; }
 .pro-card .user input, .pro-grant .user input, .modal .user input { flex: 1; min-width: 0; }
+
+/* ---------- סיכום לייב ---------- */
+.recap-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+.recap-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.recap-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.recap-stats div { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.recap-stats b { font-size: 24px; }
+.recap-stats span { color: var(--muted); font-size: 13px; }
+.rc-story-wrap { display: grid; gap: 12px; }
+.rc-story-wrap canvas { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line); }
+@media (max-width: 1100px) { .recap-grid { grid-template-columns: 1fr; } }

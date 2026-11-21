@@ -441,13 +441,16 @@ function saveAE(msg) {
   socket.emit('saveConfig', { actions: config.actions, events: config.events });
   if (msg) toast(msg);
 }
+const FREE_LIMIT = 5; // מי שכבר יש לו יותר נשאר עם מה שיש לו, רק לא מוסיפים חדשים
 $('#addAction').addEventListener('click', () => {
+  if (typeof PRO !== 'undefined' && !PRO.active && config.actions.length >= FREE_LIMIT) { toast('בגרסה החינמית אפשר עד ' + FREE_LIMIT + ' פעולות. ב-PRO אין הגבלה'); showView('pro'); return; }
   const id = 'a' + Date.now().toString(36);
   config.actions.unshift({ id, name: 'פעולה חדשה', screen: 1, duration: 5, sound: '', video: '', image: '', volume: 100, caption: '', effect: 'none', voice: 'none', voiceText: '', wheel: false });
   openEdits.act.add(id);
   saveAE();
 });
 $('#addEvent').addEventListener('click', () => {
+  if (typeof PRO !== 'undefined' && !PRO.active && config.events.length >= FREE_LIMIT) { toast('בגרסה החינמית אפשר עד ' + FREE_LIMIT + ' אירועים. ב-PRO אין הגבלה'); showView('pro'); return; }
   const id = 'v' + Date.now().toString(36);
   config.events.unshift({ id, enabled: true, trigger: 'gift', giftName: '', minCoins: 1, maxCoins: 0, actions: config.actions[0] ? [config.actions[0].id] : [], pick: 'all' });
   openEdits.ev.add(id);
