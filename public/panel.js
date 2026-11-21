@@ -822,6 +822,8 @@ const OVERLAYS = [
   { name: 'Top Gift', path: '/topgift', size: 'רזולוציה 600 על 520' },
   { name: 'מונה עוקבים', path: '/followers', size: 'רזולוציה 500 על 520' },
   { name: 'גלגל מזל', path: '/wheel', size: 'רזולוציה 700 על 700' },
+  { name: 'Top Streak', path: '/topstreak', size: 'רזולוציה 600 על 520' },
+  { name: 'טיימר סאבתון', path: '/timer', size: 'רזולוציה 700 על 360' },
   { name: 'מסך פעולות 2', path: '/screen/2', size: 'רזולוציה 1920 על 1080 (רק אם יש פעולות במסך 2)' },
   { name: 'מסך פעולות 3', path: '/screen/3', size: 'רזולוציה 1920 על 1080 (רק אם יש פעולות במסך 3)' },
   { name: 'מסך פעולות 4', path: '/screen/4', size: 'רזולוציה 1920 על 1080 (רק אם יש פעולות במסך 4)' }
@@ -974,3 +976,92 @@ socket.on('appInfo', i => {
 $('#termsDialog').addEventListener('cancel', e => e.preventDefault()); // לא נסגר ב-Esc בלי אישור
 $('#termsCheck').addEventListener('change', e => { $('#termsOk').disabled = !e.target.checked; });
 $('#termsOk').addEventListener('click', () => socket.emit('acceptTerms'));
+
+// ---------- בורר רשתות (יוטיוב בקרוב) ----------
+$$('.plat').forEach(b => b.addEventListener('click', () => {
+  if (b.dataset.plat === 'youtube') { toast('כלים ליוטיוב לייב יגיעו בעדכון הבא'); return; }
+}));
+
+// ---------- טופס כללי: ממלא, שומר ומעדכן תצוגה מקדימה ----------
+function bindSettingsForm(form, key, onPreview) {
+  const values = () => {
+    const patch = {};
+    for (const f of form.elements) {
+      if (!f.name) continue;
+      patch[f.name] = f.type === 'checkbox' ? f.checked : (f.type === 'range' || f.type === 'number') ? Number(f.value) : f.value;
+    }
+    return patch;
+  };
+  let t = null;
+  form.addEventListener('input', e => {
+    if (e.target.type === 'range') e.target.nextElementSibling.textContent = e.target.value;
+    const patch = values();
+    syncWeekFields(form);
+    onPreview && onPreview({ ...config[key], ...patch });
+    clearTimeout(t);
+    t = setTimeout(() => { socket.emit('saveConfig', { [key]: patch }); const sv = form.querySelector('.saved'); if (sv) sv.textContent = 'נשמר. הווידג׳ט בלייב התעדכן.'; }, 350);
+  });
+  form.addEventListener('submit', e => e.preventDefault());
+  return function fill(s) {
+    for (const el of form.elements) {
+      if (!el.name || !(el.name in s) || document.activeElement === el) continue;
+      if (el.type === 'checkbox') el.checked = !!s[el.name]; else el.value = s[el.name];
+      if (el.type === 'range') el.nextElementSibling.textContent = el.value;
+    }
+    if (form.elements.sound) form.elements.sound.innerHTML = soundOptions(s.sound);
+    syncWeekFields(form);
+  };
+}
+function syncWeekFields(form) {
+  const p = form.elements.period;
+  form.querySelectorAll('.week-only').forEach(el => el.hidden = !p || p.value !== 'week');
+}
+syncWeekFields(tgForm);
+tgForm.addEventListener('input', () => syncWeekFields(tgForm));
+
+// ---------- Top Streak ----------
+const streakView = TopGiftView($('#stStage .stage-inner'), { muted: true, streak: true });
+const streakSettings = t => ({ ...t, coinsColor: t.numColor, coinsLabel: 'ברצף', showCoins: true, emptyCoins: 50, titleSize: 50, nameSize: 50 });
+const fillStreak = bindSettingsForm($('#stForm'), 'topStreak', s => streakView.setSettings(streakSettings(s)));
+let streakState = null;
+socket.on('topStreak', d => {
+  streakState = d; streakView.setTop(d);
+  const t = d.top;
+  $('#stHolder').innerHTML = t
+    ? `השיא: <b><bdi>${lvEsc(t.name)}</bdi></b> עם <bdi>${lvEsc(t.gift)} ×${fmt(t.count)}</bdi> ברצף${t.test ? ' <span class="tag-test">בדיקה</span>' : ''}`
+    : 'עוד אין רצף. רצף נספר מ-2 מתנות זהות ברצף ומעלה.';
+});
+$('#stTest').addEventListener('click', () => socket.emit('testTopStreak'));
+$('#stReset').addEventListener('click', () => { socket.emit('resetTopStreak'); toast('Top Streak אופס'); });
+
+// ---------- טיימר סאבתון ----------
+const timerView = TimerView($('#tmStage .stage-inner'), { muted: true });
+const tmExample = s => {
+  const m = n => n >= 60 ? `${Math.floor(n / 60)} דק' ${n % 60 ? (n % 60) + ' שנ\'' : ''}` : `${n} שנ'`;
+  $('#tmExample').textContent = `לדוגמה: ורד (1 מטבע) = ${m(s.secPerCoin * 1)}, דונאט (30) = ${m(s.secPerCoin * 30)}, עוקב = ${m(s.secPerFollow)}`;
+};
+const fillTimer = bindSettingsForm($('#tmForm'), 'timer', s => { timerView.setSettings(s); tmExample(s); });
+let tmData = null;
+socket.on('timer', d => {
+  tmData = d; timerView.setData(d);
+  $('#tmStart').textContent = d.started ? 'המשך' : 'התחל';
+  $('#tmState').textContent = !d.started ? 'הטיימר עוד לא התחיל. לחץ "התחל" כשהלייב מתחיל.' : d.running ? 'הטיימר רץ. כל מתנה, עוקב ושיתוף מוסיפים זמן.' : 'הטיימר עצור. מתנות לא מוסיפות זמן עד שתמשיך.';
+});
+$('#tmStart').addEventListener('click', () => socket.emit('timerCmd', { op: 'start' }));
+$('#tmPause').addEventListener('click', () => socket.emit('timerCmd', { op: 'pause' }));
+$$('[data-tm-add]').forEach(b => b.addEventListener('click', () => socket.emit('timerCmd', { op: 'add', sec: Number(b.dataset.tmAdd) })));
+$('#tmReset').addEventListener('click', () => $('#tmConfirm').hidden = false);
+$('#tmResetNo').addEventListener('click', () => $('#tmConfirm').hidden = true);
+$('#tmResetYes').addEventListener('click', () => { socket.emit('timerCmd', { op: 'reset' }); $('#tmConfirm').hidden = true; });
+
+socket.on('config', c => {
+  if (c.topStreak) { fillStreak(c.topStreak); streakView.setSettings(streakSettings(c.topStreak)); if (streakState) streakView.setTop({ ...streakState, beaten: false, initial: true }); }
+  if (c.timer) { fillTimer(c.timer); timerView.setSettings(c.timer); tmExample(c.timer); }
+  syncWeekFields(tgForm);
+});
+
+// ---------- גלגל: סאונד פרס גדול (PRO) וסיכוי לפי מתנה ----------
+$('#wh-bigSoundTry').addEventListener('click', () => Sound.play($('#wh-bigSound').value));
+const syncLuck = () => { const on = $('#wh-luckBoost').checked; $('.luck-fields').hidden = !on; };
+$('#wh-luckBoost').addEventListener('change', syncLuck);
+socket.on('config', () => setTimeout(syncLuck, 0));

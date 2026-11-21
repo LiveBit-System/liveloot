@@ -612,3 +612,45 @@ svg { flex: 0 0 auto; }
 .terms-inner .hint a { color: var(--volt); }
 .terms-inner .btn-primary { align-self: flex-start; min-width: 140px; }
 .terms-inner .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---------- לוגו ובורר רשתות ---------- */
+.brand-logo { height: 34px; width: auto; display: block; }
+.platforms { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 12px 10px; padding: 4px; border-radius: 12px; background: var(--raise); border: 1px solid var(--line-soft); }
+.plat { border: 0; border-radius: 9px; padding: 7px 6px; background: transparent; color: var(--muted); font: 700 13px var(--font); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.plat small { font-size: 10px; font-weight: 600; color: var(--faint); }
+.plat[aria-checked="true"] { background: var(--grape); color: #fff; }
+.plat:hover:not([aria-checked="true"]) { color: var(--text); }
+.plat:focus-visible { outline: 2px solid var(--volt); outline-offset: 1px; }
+/* תג PRO */
+.pro-tag { display: inline-flex; align-items: center; gap: 4px; margin-inline-start: 6px; padding: 2px 8px; border-radius: 999px; background: linear-gradient(90deg, #FFD23F, #FF9E3D); color: #241600; font: 800 11px var(--font); vertical-align: middle; letter-spacing: .3px; }
+.pro-tag em { font-style: normal; font-weight: 600; opacity: .8; }
+
+.stage-timer { aspect-ratio: 700 / 360; }
+.tm-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+.luck-box { margin-top: 18px; padding: 14px 16px; border-radius: var(--r-md); border: 1px dashed var(--line); background: rgba(255,255,255,.02); display: grid; gap: 12px; }
+.luck-fields { display: flex; gap: 12px; flex-wrap: wrap; }
+.luck-fields .field { flex: 1 1 200px; margin: 0; }
+.warn-note { margin: 0; padding: 10px 12px; border-radius: var(--r-sm); background: rgba(255, 158, 61, .1); border: 1px solid rgba(255, 158, 61, .45); color: #FFD9B0; font-size: 13px; line-height: 1.55; }
+.warn-note b { color: #FFB35C; }
+
+/* ---------- עיצוב מהיר ---------- */
+.ds-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); gap: 20px; align-items: start; }
+@media (max-width: 1100px) { .ds-grid { grid-template-columns: 1fr; } }
+.ds-stage-wrap { display: grid; gap: 10px; justify-items: center; }
+.ds-stage { width: 100%; max-width: 720px; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px var(--line), 0 20px 50px rgba(0,0,0,.45); outline: none; }
+.ds-stage.transparent { background: repeating-conic-gradient(#2a2440 0 25%, #1c1728 0 50%) 0 0 / 28px 28px; }
+.ds-stage:focus-visible { box-shadow: 0 0 0 3px var(--grape); }
+.ds-tools { display: grid; gap: 16px; }
+.ds-tools fieldset { margin: 0; }
+.ds-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ds-row label.btn { cursor: pointer; }
+.ds-gifts { display: grid; gap: 10px; }
+.ds-gifts input[type=search] { height: 38px; padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--raise); color: var(--text); font: inherit; }
+.ds-gift-grid { list-style: none; margin: 0; padding: 2px; display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; max-height: 300px; overflow: auto; }
+.ds-gift { width: 100%; display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border-radius: 10px; border: 1px solid var(--line-soft); background: var(--raise); color: var(--text); cursor: grab; font: inherit; }
+.ds-gift:hover { border-color: var(--grape); }
+.ds-gift img { width: 44px; height: 44px; object-fit: contain; pointer-events: none; }
+.ds-gift span { font-size: 11px; line-height: 1.2; overflow-wrap: anywhere; text-align: center; }
+.ds-export { display: grid; gap: 10px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
+#dsObjTools:disabled { opacity: .45; }

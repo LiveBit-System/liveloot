@@ -524,3 +524,26 @@
 }
 @keyframes lv-mx-in { from { opacity: 0; transform: scale(.6) rotate(-6deg); } }
 @keyframes lv-mx-out { to { opacity: 0; transform: scale(.85); } }
+
+/* Top Streak: סימן × במקום מטבע */
+.lv-x { font-style: normal; font-weight: 900; font-size: 1.05em; margin-inline-end: .1em; }
+
+/* ---------- טיימר סאבתון ---------- */
+.lv-subt { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(10px * var(--tm-size, 1)); font-family: 'Fredoka', 'Rubik', sans-serif; }
+.lv-subt[data-font="rubik"] { font-family: 'Rubik', sans-serif; }
+.lv-subt[data-font="noto"] { font-family: 'Noto Sans Hebrew', 'Rubik', sans-serif; }
+.lv-tm-title { font-weight: 800; font-size: calc(40px * var(--tm-size, 1)); color: var(--tm-text); -webkit-text-stroke: calc(6px * var(--tm-size, 1)) var(--tm-ink); paint-order: stroke fill; letter-spacing: .5px; }
+.lv-tm-box { display: inline-flex; align-items: center; justify-content: center; }
+.lv-tm-time { font-weight: 800; font-size: calc(110px * var(--tm-size, 1)); line-height: 1; color: var(--tm-text); font-variant-numeric: tabular-nums; -webkit-text-stroke: calc(8px * var(--tm-size, 1)) var(--tm-ink); paint-order: stroke fill; white-space: nowrap; }
+.lv-subt[data-style="pill"] .lv-tm-box { background: var(--tm-bg); border: calc(7px * var(--tm-size, 1)) solid var(--tm-ink); border-radius: 999px; padding: calc(14px * var(--tm-size, 1)) calc(48px * var(--tm-size, 1)); box-shadow: calc(9px * var(--tm-size, 1)) calc(9px * var(--tm-size, 1)) 0 var(--tm-ink); }
+.lv-subt[data-style="box"] .lv-tm-box { background: var(--tm-bg); border: calc(7px * var(--tm-size, 1)) solid var(--tm-ink); border-radius: calc(26px * var(--tm-size, 1)); padding: calc(22px * var(--tm-size, 1)) calc(40px * var(--tm-size, 1)); box-shadow: calc(9px * var(--tm-size, 1)) calc(9px * var(--tm-size, 1)) 0 var(--tm-ink); background-image: repeating-linear-gradient(-45deg, rgba(255,255,255,.12) 0 14px, transparent 14px 30px); }
+.lv-subt[data-style="plain"] .lv-tm-time { -webkit-text-stroke-width: calc(10px * var(--tm-size, 1)); }
+.lv-subt.low .lv-tm-time { color: var(--tm-accent); animation: lv-tm-pulse 1s ease-in-out infinite; }
+.lv-subt.done .lv-tm-time { font-size: calc(70px * var(--tm-size, 1)); color: var(--tm-accent); }
+.lv-subt.bump .lv-tm-box { animation: lv-tm-bump .45s cubic-bezier(.2,1.6,.4,1); }
+@keyframes lv-tm-bump { 0% { transform: scale(1); } 40% { transform: scale(1.08) rotate(-1.5deg); } 100% { transform: scale(1); } }
+@keyframes lv-tm-pulse { 50% { transform: scale(1.05); } }
+.lv-tm-adds { display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: calc(40px * var(--tm-size, 1)); }
+.lv-tm-add { display: flex; align-items: center; gap: 10px; padding: calc(6px * var(--tm-size, 1)) calc(16px * var(--tm-size, 1)); border-radius: 999px; background: var(--tm-accent); color: var(--tm-ink); border: calc(4px * var(--tm-size, 1)) solid var(--tm-ink); font-weight: 800; font-size: calc(24px * var(--tm-size, 1)); animation: lv-tm-in .4s cubic-bezier(.2,1.6,.4,1); transition: opacity .4s, transform .4s; }
+.lv-tm-add.out { opacity: 0; transform: translateY(-10px); }
+@keyframes lv-tm-in { from { opacity: 0; transform: translateY(20px) scale(.8); } }

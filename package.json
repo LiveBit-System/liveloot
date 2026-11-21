@@ -1,13 +1,13 @@
 {
   "name": "liveloot",
   "productName": "LiveLoot",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "LiveLoot - widgets and lucky wheel for TikTok LIVE",
   "author": "Liroy",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win nsis"
+    "dist": "node build/patch-builder.js && electron-builder --win nsis"
   },
   "dependencies": {
     "electron-updater": "^6.6.2",

@@ -174,7 +174,11 @@ function WheelView(root, opts = {}) {
     result.innerHTML = (big ? '<em>פרס גדול!</em>' : '') +
       `<b dir="auto">${lvEsc(s.name || '')}</b><span>קיבל: <bdi>${lvEsc(label)}</bdi></span>`;
     if (big) {
-      if (!opts.muted && !settings.muted) { Sound.play('builtin:fanfare'); setTimeout(() => Sound.play('builtin:fanfare'), 700); }
+      if (!opts.muted && !settings.muted) {
+        const snd = settings.bigSound || 'builtin:fanfare';
+        Sound.play(snd);
+        if (snd === 'builtin:fanfare') setTimeout(() => Sound.play('builtin:fanfare'), 700);
+      }
       flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
       confetti(prize?.color, 90);
       later(900, () => confetti(prize?.color, 60), g);

@@ -18,6 +18,9 @@ function TopGiftView(root, opts = {}) {
   let countAnim = null;
 
   const fmt = n => Number(n || 0).toLocaleString('he-IL');
+  // מצב רצף (Top Streak): במקום מטבעות מראים כמה ברצף
+  const valOf = t => opts.streak ? (t.count || 0) : (t.coins || 0);
+  const numIcon = () => opts.streak ? '<b class="lv-x">×</b>' : ICONS.coin;
   // כיוון שורת המטבעות לפי השפה: "15,000 COINS" באנגלית, "15,000 מטבעות" בעברית
   const coinsDir = () => /[\u0590-\u05FF]/.test(settings.coinsLabel || '') ? 'rtl' : 'ltr';
 
@@ -38,7 +41,7 @@ function TopGiftView(root, opts = {}) {
         <div class="lv-top-title" style="${titleStyle}">${lvEsc(s.title)}</div>
         ${s.showGift === false ? '' : `<div class="lv-top-gift">${GIFT_ART}</div>`}
         ${s.showCoins === false ? '' : `<div class="lv-top-coins" dir="${coinsDir()}" style="color:${lvEsc(s.coinsColor)}">
-          ${ICONS.coin}<span class="lv-num">${fmt(s.emptyCoins ?? 15000)}</span> ${lvEsc(s.coinsLabel)}</div>`}`;
+          ${numIcon()}<span class="lv-num">${fmt(s.emptyCoins ?? 15000)}</span> ${lvEsc(s.coinsLabel)}</div>`}`;
       return;
     }
     const gift = s.showGift === false ? '' : `
@@ -57,7 +60,7 @@ function TopGiftView(root, opts = {}) {
         <span class="lv-top-name" style="color:${lvEsc(s.nameColor)}" dir="auto">${lvEsc(top.name)}</span>
       </div>
       ${s.showCoins === false ? '' : `<div class="lv-top-coins" dir="${coinsDir()}" style="color:${lvEsc(s.coinsColor)}">
-        ${ICONS.coin}<span class="lv-num">${fmt(shownCoins)}</span> ${lvEsc(s.coinsLabel)}</div>`}
+        ${numIcon()}<span class="lv-num">${fmt(shownCoins)}</span> ${lvEsc(s.coinsLabel)}</div>`}
       <div class="lv-top-beat"></div>`;
   }
 
@@ -95,9 +98,9 @@ function TopGiftView(root, opts = {}) {
       const prevTop = top;
       top = data.top;
       if (!top) { shownCoins = 0; render(); return; }
-      if (data.initial || !prevTop) shownCoins = data.initial ? top.coins : 0;
+      if (data.initial || !prevTop) shownCoins = data.initial ? valOf(top) : 0;
       render();
-      countTo(top.coins);
+      countTo(valOf(top));
       if (data.beaten && settings.celebrate !== false) celebrate(data.previous);
     }
   };

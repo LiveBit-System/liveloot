@@ -43,7 +43,28 @@ const DEFAULT_TOPGIFT = {
   mode: 'send',            // send = כל השליחה (מתנה × כמות ברצף), single = מחיר מתנה אחת
   celebrate: true,         // אנימציה כשמישהו עוקף את השיא
   sound: 'builtin:fanfare',
-  resetOnNewStream: true
+  resetOnNewStream: true,
+  period: 'live',          // live = מתאפס בכל לייב, week = מתנת השבוע, never = לא מתאפס
+  weekEndDay: 4            // היום האחרון בשבוע (0 ראשון ... 6 שבת). אחריו מתחיל שבוע חדש
+};
+
+// הרצף הכי ארוך (קומבו של אותה מתנה מצופה אחד)
+const DEFAULT_STREAK = {
+  title: 'הרצף הכי ארוך', titleColor: '#FFFFFF', nameColor: '#FFFFFF', numColor: '#FFD23F',
+  font: 'fredoka', outline: true, outlineColor: '#141414', showAvatar: true, showGift: true,
+  celebrate: true, sound: 'builtin:coin', period: 'live', weekEndDay: 4
+};
+
+// טיימר סאבתון: מתחיל מזמן מסוים, וכל מתנה/עוקב/שיתוף מוסיפים זמן
+const DEFAULT_TIMER = {
+  startMinutes: 60,
+  secPerCoin: 6, secPerFollow: 30, secPerShare: 10, secPerLike100: 0,
+  maxHours: 0,                 // 0 = בלי תקרה
+  title: 'סאבתון', endText: 'הזמן נגמר!',
+  style: 'pill',               // pill / box / plain
+  font: 'fredoka', size: 100,
+  textColor: '#FFFFFF', bgColor: '#7C4DFF', accentColor: '#FFD23F', outlineColor: '#200A3A',
+  showTitle: true, showAdds: true, sound: 'builtin:pop'
 };
 
 // אפקטים על המסך. לכל אירוע מופעל החוק הכי מדויק שמתאים (מתנה בשם > מינימום גבוה > כללי)
@@ -81,6 +102,9 @@ const DEFAULT_WHEEL = {
   enabled: true, triggerGifts: ['Rose'], onFollow: false, hideIdle: false,
   // תורמים גדולים: 0 = כבוי
   minCoins: 0, coinsPerSpin: 0, bigAtCoins: 0,
+  // מתנה גדולה = סיכוי גבוה יותר לפרס גדול (כבוי כברירת מחדל)
+  luckBoost: false, luckBoostPct: 20, luckBoostMax: 3,
+  bigSound: 'builtin:fanfare',
   prizes: [
     { id: 'p1', text: 'רק שוטגאן', color: '#F5C542', chance: 20 },
     { id: 'p2', text: 'בלי לבנות', color: '#FF6A3D', chance: 15 },
@@ -95,9 +119,11 @@ const DEFAULT_CONFIG = {
   wheel: DEFAULT_WHEEL,
   followers: DEFAULT_FOLLOWERS,
   fxVolume: 80,
-  username: 'liroy0641',
+  username: '',
   signApiKey: '',
   topGift: DEFAULT_TOPGIFT,
+  topStreak: DEFAULT_STREAK,
+  timer: DEFAULT_TIMER,
   rules: [
     { id: 'r1', enabled: true, name: 'כל מתנה', trigger: 'gift', giftName: '', minCoins: 0,
       title: '{name}', subtitle: 'שלח {gift} ×{count}', duration: 5, sound: 'builtin:coin', style: 'gift' },
@@ -121,7 +147,10 @@ function writeJson(file, data) {
 
 const TERMS_VERSION = '2026-11';
 let config = { ...DEFAULT_CONFIG, ...readJson(CONFIG_FILE, {}) };
+if (config.topGift && !config.topGift.period) config.topGift.period = config.topGift.resetOnNewStream === false ? 'never' : 'live';
 config.topGift = { ...DEFAULT_TOPGIFT, ...(config.topGift || {}) };
+config.topStreak = { ...DEFAULT_STREAK, ...(config.topStreak || {}) };
+config.timer = { ...DEFAULT_TIMER, ...(config.timer || {}) };
 // פעולות ואירועים: פעולה = מה קורה על המסך, אירוע = מתי זה קורה. האפקטים הישנים הופכים לפעולות + אירועים
 if (!Array.isArray(config.actions) || !Array.isArray(config.events)) {
   const old = Array.isArray(config.effects) ? config.effects : DEFAULT_EFFECTS;
@@ -206,6 +235,28 @@ app.post('/api/wheel-image', express.raw({ type: 'image/*', limit: '8mb' }), (re
   fs.writeFileSync(path.join(WHEEL_IMG_DIR, name), req.body);
   res.json({ url: '/wheel-img/' + name });
 });
+// תמונות מתנות דרך LiveLoot, כדי שאפשר יהיה לשים אותן בעיצוב ולהוריד אותו כתמונה
+// (רק מהשרתים של התמונות של טיקטוק, לא מכל אתר)
+const IMG_HOSTS = /(^|\.)(tiktokcdn\.com|tiktokcdn-us\.com|tiktokcdn-eu\.com|ibyteimg\.com|byteimg\.com|tiktokv\.com)$/i;
+const imgCache = new Map();
+app.get('/api/img', async (req, res) => {
+  let u; try { u = new URL(String(req.query.u || '')); } catch { return res.status(400).end(); }
+  if (u.protocol !== 'https:' || !IMG_HOSTS.test(u.hostname)) return res.status(403).end();
+  try {
+    let hit = imgCache.get(u.href);
+    if (!hit) {
+      const r = await fetch(u.href, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      const type = r.headers.get('content-type') || '';
+      if (!r.ok || !/^image\//.test(type)) return res.status(502).end();
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (buf.length > 5e6) return res.status(413).end();
+      hit = { type, buf };
+      if (imgCache.size > 300) imgCache.delete(imgCache.keys().next().value);
+      imgCache.set(u.href, hit);
+    }
+    res.set('Content-Type', hit.type).set('Cache-Control', 'max-age=86400').send(hit.buf);
+  } catch { res.status(502).end(); }
+});
 // מסך הפתיחה מופיע רק בפעם הראשונה. אחר כך נפתח ישר הפאנל (ו-/home מציג אותו שוב)
 app.get('/', (req, res) => /(^|;\s*)ll_seen=1/.test(req.headers.cookie || '') ? res.redirect('/panel.html') : res.sendFile(path.join(ROOT, 'public/home.html')));
 app.get('/home', (req, res) => res.sendFile(path.join(ROOT, 'public/home.html')));
@@ -213,6 +264,8 @@ app.get('/legal', (req, res) => res.sendFile(path.join(ROOT, 'public/legal.html'
 // קישורים קצרים ל-OBS / TikTok LIVE Studio
 app.get('/alerts', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/alerts.html')));
 app.get('/topgift', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/topgift.html')));
+app.get('/topstreak', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/topstreak.html')));
+app.get('/timer', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/timer.html')));
 app.get('/followers', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/followers.html')));
 app.get('/wheel', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/wheel.html')));
 app.get('/screen/:n', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/alerts.html')));
@@ -379,6 +432,79 @@ function resetTopGift() {
   io.emit('topGift', { top: null, previous: null, beaten: false, reset: true });
 }
 
+// ---------- שבוע: מתנת השבוע ו-Top Streak שבועי ----------
+// תחילת השבוע הנוכחי = חצות שאחרי "היום האחרון בשבוע" שהסטרימר בחר
+function weekStart(endDay, now = new Date()) {
+  const startDay = (Number(endDay) + 1) % 7;
+  const d = new Date(now); d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() - startDay + 7) % 7));
+  return d.getTime();
+}
+function checkWeeks() {
+  if (config.topGift.period === 'week' && state.topGift && state.topGift.at < weekStart(config.topGift.weekEndDay)) {
+    state.topGiftLastWeek = state.topGift; resetTopGift();
+  }
+  if (config.topStreak.period === 'week' && state.topStreak && state.topStreak.at < weekStart(config.topStreak.weekEndDay)) {
+    state.topStreakLastWeek = state.topStreak; resetTopStreak();
+  }
+}
+setInterval(checkWeeks, 60 * 1000);
+
+// ---------- Top Streak: הרצף הכי ארוך ----------
+function updateTopStreak(evt) {
+  checkWeeks();
+  const count = Number(evt.count) || 1;
+  if (count < 2) return; // רצף = לפחות 2 ברצף
+  const cur = state.topStreak;
+  if (cur && count <= cur.count) return;
+  state.topStreak = { name: evt.name, avatar: evt.avatar || '', gift: evt.gift, giftImage: evt.giftImage || '', count, at: Date.now(), test: !!evt.test };
+  saveState();
+  io.emit('topStreak', { top: state.topStreak, previous: cur || null, beaten: !!cur });
+}
+function resetTopStreak() {
+  state.topStreak = null;
+  saveState();
+  io.emit('topStreak', { top: null, previous: null, beaten: false, reset: true });
+}
+
+// ---------- טיימר סאבתון ----------
+if (!state.timer) state.timer = { running: false, endsAt: 0, remaining: 0, started: false };
+const timerRemaining = () => state.timer.running ? Math.max(0, state.timer.endsAt - Date.now()) : state.timer.remaining;
+function emitTimer(add) {
+  io.emit('timer', { running: state.timer.running, endsAt: state.timer.endsAt, remaining: timerRemaining(), started: state.timer.started, now: Date.now(), add: add || null });
+}
+function timerSet(ms, running = state.timer.running) {
+  const cap = (Number(config.timer.maxHours) || 0) * 3600e3;
+  if (cap) ms = Math.min(ms, cap);
+  ms = Math.max(0, ms);
+  state.timer.running = running && ms > 0;
+  state.timer.remaining = ms;
+  state.timer.endsAt = Date.now() + ms;
+}
+function timerCmd(op, sec) {
+  if (op === 'start') { if (!state.timer.started) { timerSet((Number(config.timer.startMinutes) || 0) * 60e3, true); state.timer.started = true; } else timerSet(timerRemaining(), true); }
+  else if (op === 'pause') timerSet(timerRemaining(), false);
+  else if (op === 'reset') { state.timer = { running: false, endsAt: 0, remaining: (Number(config.timer.startMinutes) || 0) * 60e3, started: false }; }
+  else if (op === 'add') { timerSet(timerRemaining() + (Number(sec) || 0) * 1000); saveState(); emitTimer({ sec: Number(sec) || 0, name: '' }); return; }
+  saveState(); emitTimer();
+}
+// כל מתנה/עוקב/שיתוף מוסיפים זמן, רק כשהטיימר רץ
+function emitTimerTo(socket) { socket.emit('timer', { running: state.timer.running, endsAt: state.timer.endsAt, remaining: timerRemaining(), started: state.timer.started, now: Date.now(), add: null }); }
+function timerFromEvent(evt) {
+  if (!state.timer.started || !state.timer.running || timerRemaining() <= 0) return;
+  const t = config.timer;
+  let sec = 0;
+  if (evt.type === 'gift') sec = (Number(t.secPerCoin) || 0) * (evt.coins || 0);
+  else if (evt.type === 'follow') sec = Number(t.secPerFollow) || 0;
+  else if (evt.type === 'share') sec = Number(t.secPerShare) || 0;
+  else if (evt.type === 'like') sec = Math.floor((evt.count || 0) / 100) * (Number(t.secPerLike100) || 0);
+  if (sec <= 0) return;
+  timerSet(timerRemaining() + sec * 1000);
+  saveState();
+  emitTimer({ sec, name: evt.name || '' });
+}
+if (!state.timer.started && !state.timer.remaining) state.timer.remaining = (Number(config.timer.startMinutes) || 0) * 60e3;
+
 // ---------- חוקים ----------
 function fill(text, evt) {
   return String(text || '')
@@ -484,11 +610,23 @@ function startFollowerPoll(startCount) {
 // השרת בוחר את הפרס (לפי אחוזי הסיכוי) ומתזמן סיבוב אחד בכל פעם, כדי שכל המסכים יראו אותו דבר
 const SPIN_MS = 6000, SPIN_GAP_MS = 4300;
 let wheelFreeAt = 0, wheelPending = 0, wheelGen = 0;
-function pickPrize(prizes) {
-  const total = prizes.reduce((a, p) => a + Math.max(0, Number(p.chance) || 0), 0);
+// משקל של פרס. אם "מתנה גדולה = סיכוי גבוה יותר" פעיל, פרסים גדולים מקבלים משקל נוסף לפי שווי המתנה
+function prizeWeight(p, evt) {
+  let w = Math.max(0, Number(p.chance) || 0);
+  const w8 = config.wheel;
+  if (p.big && w8.luckBoost && evt && evt.type === 'gift') {
+    const per100 = Math.max(0, Number(w8.luckBoostPct) || 0) / 100;      // כמה אחוזים לכל 100 מטבעות
+    const cap = Math.max(1, Number(w8.luckBoostMax) || 3);               // עד פי כמה
+    w *= Math.min(cap, 1 + per100 * ((evt.coins || 0) / 100));
+  }
+  return w;
+}
+function pickPrize(prizes, evt) {
+  const ws = prizes.map(p => prizeWeight(p, evt));
+  const total = ws.reduce((a, b) => a + b, 0);
   if (total <= 0) return Math.floor(Math.random() * prizes.length);
   let r = Math.random() * total;
-  for (let i = 0; i < prizes.length; i++) { r -= Math.max(0, Number(prizes[i].chance) || 0); if (r < 0) return i; }
+  for (let i = 0; i < prizes.length; i++) { r -= ws[i]; if (r < 0) return i; }
   return prizes.length - 1;
 }
 // תור הסיבובים: מי שתרם מתנה מסובב לפני מי שרק עשה עוקב. בתוך כל קבוצה, לפי הסדר
@@ -516,7 +654,7 @@ function runWheelQueue() {
   const { evt } = wheelQueue.shift();
   const prizes = (config.wheel.prizes || []).filter(p => String(p.text || '').trim() || p.image);
   if (!config.wheel.enabled || prizes.length < 2) { wheelQueue.length = 0; emitWheelState(); return; }
-  let index = pickPrize(prizes);
+  let index = pickPrize(prizes, evt);
   if (evt.forceBig) { const b = prizes.findIndex(p => p.big); if (b >= 0) index = b; }
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const live = wheelOverlays > 0;
@@ -621,7 +759,8 @@ function handleEvent(evt) {
   evt.rule = rule ? rule.name : null;
   pushFeed(evt);
   if (rule) sendAlert(rule, evt);
-  if (evt.type === 'gift') updateTopGift(evt);
+  if (evt.type === 'gift') { checkWeeks(); updateTopGift(evt); updateTopStreak(evt); }
+  timerFromEvent(evt);
   if (evt.type === 'follow') addFollower(evt);
   const wt = config.wheel;
   if (evt.type === 'gift') {
@@ -706,7 +845,8 @@ async function connectLive() {
       followSpun.clear();
       state.followers.session = 0; // לייב חדש: סופרים מחדש את העוקבים של הלייב
       state.followers.lost = 0;
-      if (config.topGift.resetOnNewStream) resetTopGift(); else saveState();
+      if (config.topGift.period === 'live') resetTopGift(); else saveState();
+      if (config.topStreak.period === 'live') resetTopStreak();
     }
     const owner = ownerInfo(s?.roomInfo || connection?.roomInfo);
     if (owner) {
@@ -791,6 +931,15 @@ io.on('connection', socket => {
   socket.on('disconnectLive', () => disconnectLive());
   socket.on('test', kind => { if (TEST[kind]) handleEvent({ ...TEST[kind](), test: true }); });
   socket.on('resetTopGift', () => resetTopGift());
+  socket.emit('topStreak', { top: state.topStreak || null, previous: null, beaten: false, initial: true });
+  socket.on('resetTopStreak', () => resetTopStreak());
+  socket.on('testTopStreak', () => {
+    const base = state.topStreak?.count || 0;
+    const count = base ? base + Math.ceil(base * 0.4) + 1 : 25;
+    handleEvent({ type: 'gift', name: SAMPLE_NAMES[Math.floor(Math.random() * SAMPLE_NAMES.length)], gift: 'Rose', count, unitCoins: 1, coins: count, test: true });
+  });
+  emitTimerTo(socket);
+  socket.on('timerCmd', d => timerCmd(d && d.op, d && d.sec));
   socket.on('clearScreen', () => { clearWheel(); io.emit('clear'); });
   // בדיקה של "תורמים גדולים": מתנה בשווי מסוים מצופה מדומה
   socket.on('testGiftValue', g => {
@@ -840,6 +989,8 @@ io.on('connection', socket => {
     if (patch.topGift) patch.topGift = { ...config.topGift, ...patch.topGift };
     if (patch.followers) patch.followers = { ...config.followers, ...patch.followers };
     if (patch.wheel) patch.wheel = { ...config.wheel, ...patch.wheel };
+    if (patch.topStreak) patch.topStreak = { ...config.topStreak, ...patch.topStreak };
+    if (patch.timer) patch.timer = { ...config.timer, ...patch.timer };
     config = { ...config, ...patch };
     saveConfig();
     io.emit('config', config);
