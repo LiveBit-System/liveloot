@@ -70,6 +70,16 @@ function createWindow() {
   });
 
   win.loadURL(PANEL);
+  // סגירת החלון עוצרת את LiveLoot, ואז הווידג'טים בלייב נעלמים (ריבועים אפורים ב-LIVE Studio). שואלים לפני
+  win.on('close', e => {
+    if (app.__quitting) return;
+    const r = dialog.showMessageBoxSync(win, {
+      type: 'warning', buttons: ['מזער ותשאיר פועל', 'סגור בכל זאת'], defaultId: 0, cancelId: 0,
+      title: 'LiveLoot', message: 'אם תסגור את LiveLoot, הגלגל וההתראות בלייב יפסיקו לעבוד.',
+      detail: 'בזמן לייב צריך להשאיר את LiveLoot פתוח. אפשר פשוט למזער אותו.'
+    });
+    if (r === 0) { e.preventDefault(); win.minimize(); } else app.__quitting = true;
+  });
   win.on('closed', () => { win = null; });
 }
 
@@ -104,4 +114,5 @@ function checkForUpdates() {
 }
 
 // סגירת החלון סוגרת את כל הכלי
+app.on('before-quit', () => { app.__quitting = true; });
 app.on('window-all-closed', () => app.quit());

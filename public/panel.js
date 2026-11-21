@@ -215,6 +215,22 @@ const VOICE_NAME = { male: 'גבר', female: 'אישה', none: 'בלי קול', 
 const SCREEN_PATH = n => n === 1 ? '/alerts' : '/screen/' + n;
 // במחשב: localtest.me. באתר: הקישור האישי של המשתמש (/w/<מפתח>)
 let LINK_BASE = 'http://liveloot.localtest.me:' + (location.port || 80);
+// בחלק מהבתים הראוטר או הספק חוסמים את localtest.me (הגנת DNS rebinding), ואז LIVE Studio מציג
+// ריבועים אפורים במקום הווידג'ט. בודקים מהמחשב עצמו: אם השם לא נפתח, עוברים לכתובת 127.0.0.1 שתמיד עובדת
+(function checkLinkHost() {
+  const port = location.port || 80;
+  const img = new Image();
+  let done = false;
+  const fallback = () => {
+    if (done || typeof WEB !== 'undefined' && WEB) return; done = true;
+    LINK_BASE = 'http://127.0.0.1:' + port;
+    try { renderScreens(); renderObs(); renderLinkBoxes(); } catch {}
+  };
+  img.onload = () => { done = true; };
+  img.onerror = fallback;
+  setTimeout(fallback, 5000);
+  img.src = 'http://liveloot.localtest.me:' + port + '/brand/favicon.png?t=' + Date.now();
+})();
 async function copyText(t) {
   try { await navigator.clipboard.writeText(t); toast('הקישור הועתק'); }
   catch { toast('לא הצלחתי להעתיק. תסמן את הקישור ותלחץ Ctrl+C'); }
