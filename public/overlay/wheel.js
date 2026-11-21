@@ -48,14 +48,19 @@ function WheelView(root, opts = {}) {
     d.style.setProperty('--c1', shade(c, .35));
     d.style.setProperty('--c2', shade(c, -.38));
     const t = String(p.text || '').trim();
+    const plain = () => {
+      const n = [...t].length;
+      d.style.fontSize = (n <= 4 ? 50 : n <= 7 ? 40 : n <= 11 ? 32 : n <= 18 ? 26 : 21) + 'px';
+      d.textContent = t;
+    };
     if (p.image) {
       d.classList.add('has-img');
       d.innerHTML = `<img src="${lvEsc(p.image)}" alt="">` + (t ? `<span class="cap">${lvEsc(t)}</span>` : '');
+      // אם התמונה לא נטענת (נמחקה או נשברה), חוזרים לטקסט הגדול במקום ריבוע ריק עם כיתוב קטן
+      d.querySelector('img').addEventListener('error', () => { d.classList.remove('has-img'); plain(); });
       return d;
     }
-    const n = [...t].length;
-    d.style.fontSize = (n <= 4 ? 50 : n <= 7 ? 40 : n <= 11 ? 32 : n <= 18 ? 26 : 21) + 'px';
-    d.textContent = t;
+    plain();
     return d;
   }
   function shade(hex, amt) {
