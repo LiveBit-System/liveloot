@@ -23,6 +23,11 @@
       <button type="button" class="plat" role="radio" aria-checked="true" data-plat="tiktok">טיקטוק</button>
       <button type="button" class="plat" role="radio" aria-checked="false" data-plat="youtube">יוטיוב <small>בקרוב</small></button>
     </div>
+    <button type="button" class="acct" id="acct" title="המשתמש שלך ו-PRO">
+      <span class="acct-av" id="acctAv" aria-hidden="true"></span>
+      <span class="acct-txt"><b id="acctName" dir="ltr">משתמש חדש</b><small id="acctSub">לחץ ליצירת משתמש</small></span>
+      <span class="pro-badge" id="acctPro" hidden>PRO</span>
+    </button>
     <p class="nav-group">שליטה</p>
     <button class="nav-item" data-view="live" aria-current="page">
       <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>לייב</span>
@@ -56,6 +61,9 @@
       <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span>עיצוב מהיר</span>
     </button>
     <p class="nav-group">כללי</p>
+    <button class="nav-item" data-view="pro">
+      <svg viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 4l4.5 8L21 8l-2 11H5z"/></svg><span>PRO</span>
+    </button>
     <button class="nav-item" data-view="obs">
       <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg><span>קישורים ללייב</span>
     </button>
@@ -230,7 +238,7 @@
             <p class="hint">כל מתנה ברצף נספרת: Rose ×50 נותן 50 סיבובים, אחד אחרי השני. אפשר לעצור את הגלגל בכל רגע.</p>
           </fieldset>
           <fieldset>
-            <legend>תורמים גדולים <span class="pro-tag">PRO <em>גישה מוקדמת</em></span></legend>
+            <legend>תורמים גדולים </legend>
             <p class="hint">מי שתורם יותר מקבל יותר. כל שדה עם 0 כבוי.</p>
             <div class="donor-row">
               <label class="field"><span>כל מתנה ששווה לפחות</span>
@@ -275,14 +283,14 @@
           </fieldset>
           <fieldset>
             <legend>תצוגה</legend>
-            <div class="field"><span>סאונד לפרס גדול <span class="pro-tag">PRO <em>גישה מוקדמת</em></span></span>
+            <div class="field"><span>סאונד לפרס גדול <span class="pro-tag">PRO</span></span>
               <div class="gift-pick-row">
                 <select id="wh-bigSound" name="bigSound" aria-label="סאונד לפרס גדול">
                   <option value="builtin:fanfare">חגיגה (רגיל)</option>
-                  <option value="builtin:jackpot">ג'קפוט</option>
-                  <option value="builtin:levelup">עלית שלב</option>
-                  <option value="builtin:epic">אפי</option>
-                  <option value="builtin:arcade">ארקייד</option>
+                  <option value="builtin:jackpot" data-pro>ג'קפוט</option>
+                  <option value="builtin:levelup" data-pro>עלית שלב</option>
+                  <option value="builtin:epic" data-pro>אפי</option>
+                  <option value="builtin:arcade" data-pro>ארקייד</option>
                 </select>
                 <button class="btn btn-sm" type="button" id="wh-bigSoundTry">השמע</button>
               </div>
@@ -388,11 +396,17 @@
     </section>
 
     <!-- ===== טיימר סאבתון ===== -->
-    <section class="view" data-view="timer" hidden>
+    <section class="view pro-gated" data-view="timer" hidden>
       <div class="view-head"><div>
         <h1>טיימר סאבתון</h1>
         <p class="lede">הלייב נגמר כשהטיימר מגיע לאפס, וכל מתנה, עוקב או שיתוף מוסיפים זמן. הצופים מחליטים כמה זמן הלייב יימשך.</p>
       </div></div>
+      <div class="pro-lock" data-pro-lock hidden>
+        <span class="pro-badge">PRO</span>
+        <h2>החלק הזה פתוח רק ב-PRO</h2>
+        <p class="hint" data-pro-howto></p>
+        <button class="btn btn-primary" type="button" data-go-pro>איך משיגים PRO</button>
+      </div>
       <div class="link-box" data-link="/timer">
         <div class="link-text"><b>הקישור ל-LIVE Studio</b><span>הוספת מקור ← קישור. רזולוציה: 700 על 360</span></div>
         <code dir="ltr"></code><button class="btn btn-sm" type="button" data-copy-link>העתק</button>
@@ -450,11 +464,17 @@
 
 
     <!-- ===== עיצוב מהיר ===== -->
-    <section class="view" data-view="design" hidden>
+    <section class="view pro-gated" data-view="design" hidden>
       <div class="view-head"><div>
         <h1>עיצוב מהיר</h1>
         <p class="lede">מעצבים תמונה ריבועית (1080 על 1080) לפרסים, לבאנרים או לפוסטים: טקסט, תמונות ומתנות. גוררים, מגדילים, מסובבים ומורידים כ-PNG.</p>
       </div></div>
+      <div class="pro-lock" data-pro-lock hidden>
+        <span class="pro-badge">PRO</span>
+        <h2>החלק הזה פתוח רק ב-PRO</h2>
+        <p class="hint" data-pro-howto></p>
+        <button class="btn btn-primary" type="button" data-go-pro>איך משיגים PRO</button>
+      </div>
       <div class="ds-grid">
         <div class="panel ds-stage-wrap">
           <div class="ds-stage" id="dsStage" tabindex="0" aria-label="אזור העיצוב"><canvas id="dsCanvas"></canvas></div>
@@ -703,6 +723,59 @@
       <ul class="obs-list" id="obsList"></ul>
     </section>
 
+    <!-- ===== PRO ===== -->
+    <section class="view" data-view="pro" hidden>
+      <div class="view-head"><div>
+        <h1>LiveLoot PRO</h1>
+        <p class="lede">המשתמש שלך הוא שם המשתמש שלך בטיקטוק. בלי מייל ובלי סיסמה.</p>
+      </div></div>
+      <div class="panel narrow pro-card">
+        <div class="pro-me">
+          <span class="acct-av big" id="proAv" aria-hidden="true"></span>
+          <div><b id="proName" dir="ltr"></b><p class="hint" id="proState"></p></div>
+          <span class="pro-badge" id="proBadge" hidden>PRO</span>
+        </div>
+        <form class="pro-user" id="proUserForm">
+          <label class="field"><span>שם המשתמש שלך בטיקטוק</span>
+            <span class="user"><span class="at">@</span><input id="proUserInput" autocomplete="off" spellcheck="false" dir="ltr" required></span></label>
+          <button class="btn" type="submit">שמור משתמש</button>
+        </form>
+        <h2>מה מקבלים ב-PRO</h2>
+        <ul class="pro-perks">
+          <li>גלגל המזל בלי סימן המים של LiveLoot</li>
+          <li>צלילי זכייה מיוחדים לפרס גדול</li>
+          <li>טיימר סאבתון</li>
+          <li>חלון עיצוב מהיר</li>
+        </ul>
+        <p class="pro-howto" id="proHowto"></p>
+        <div class="tg-actions"><button class="btn" type="button" id="proRefresh">בדוק שוב</button></div>
+      </div>
+
+      <div class="panel narrow" id="adminBox" hidden>
+        <h2>ניהול PRO <small class="hint">(רואה את זה רק המנהל)</small></h2>
+        <form class="pro-grant" id="grantForm">
+          <label class="field"><span>שם משתמש בטיקטוק</span><span class="user"><span class="at">@</span><input id="grantUser" autocomplete="off" spellcheck="false" dir="ltr" required></span></label>
+          <label class="field"><span>לכמה זמן</span><select id="grantDays"><option value="30" selected>30 יום</option><option value="7">שבוע</option><option value="90">3 חודשים</option><option value="365">שנה</option></select></label>
+          <button class="btn btn-primary" type="submit">תן PRO</button>
+        </form>
+        <h3>תרמו בלייב הזה</h3>
+        <p class="hint">מתעדכן לבד כשאתה מחובר ללייב. מי שתרם 400 מטבעות ומעלה מסומן.</p>
+        <ul class="pro-rows" id="donorList"></ul>
+        <h3>יש להם PRO</h3>
+        <ul class="pro-rows" id="proList"></ul>
+        <div class="tg-actions"><button class="btn btn-sm" type="button" id="adminOut">התנתק מניהול</button></div>
+      </div>
+
+      <div class="panel narrow" id="adminLogin" hidden>
+        <h2>כניסת מנהל</h2>
+        <p class="hint">מדביקים טוקן של GitHub עם הרשאת כתיבה לריפו של LiveLoot. הטוקן נשמר רק במחשב הזה.</p>
+        <form class="pro-grant" id="adminForm">
+          <input id="adminToken" type="password" autocomplete="off" dir="ltr" placeholder="github_pat_...">
+          <button class="btn btn-primary" type="submit">כניסה</button>
+        </form>
+      </div>
+    </section>
+
     <!-- ===== הגדרות ===== -->
     <section class="view" data-view="prefs" hidden>
       <div class="view-head"><div><h1>הגדרות</h1></div></div>
@@ -739,7 +812,7 @@
       <div class="panel narrow about-box">
         <h2>על LiveLoot</h2>
         <p class="hint">גרסה <b id="appVersion" dir="ltr">-</b>. קוד פתוח (AGPL-3.0). לא קשורה לטיקטוק.</p>
-        <p class="hint"><span class="pro-tag">PRO <em>גישה מוקדמת</em></span> פיצ'רים עם התג הזה יהיו חלק מ-LiveLoot PRO. כרגע הם פתוחים לכולם.</p>
+        <p class="hint"><span class="pro-tag">PRO</span> פיצ'רים עם התג הזה פתוחים רק למשתמשי PRO. פרטים בטאב PRO.</p>
         <div class="tg-actions">
           <a class="btn" href="/legal" target="_blank" rel="noopener">תנאי שימוש ופרטיות</a>
           <a class="btn" href="https://github.com/LiveBit-System/liveloot" target="_blank" rel="noopener">קוד המקור</a>
@@ -806,6 +879,15 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<div class="modal-back" id="newUser" hidden>
+  <form class="modal panel" id="newUserForm">
+    <img class="brand-logo" src="brand/logo.png" alt="LiveLoot">
+    <h2>יצירת משתמש</h2>
+    <p class="hint">רושמים את שם המשתמש שלך בטיקטוק. בלי מייל ובלי סיסמה.</p>
+    <span class="user"><span class="at">@</span><input id="newUserInput" autocomplete="off" spellcheck="false" dir="ltr" required placeholder="username"></span>
+    <button class="btn btn-primary" type="submit">צור משתמש</button>
+  </form>
+</div>
 <script src="/socket.io/socket.io.js"></script>
 <script src="overlay/sound.js"></script>
 <script src="overlay/alerts.js"></script>

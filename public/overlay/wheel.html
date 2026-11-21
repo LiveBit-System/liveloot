@@ -26,6 +26,7 @@
   });
   socket.on('connect', () => socket.emit('wheelOverlay'));
   socket.on('config', c => view.setSettings(c.wheel || {}));
+  socket.on('pro', p => view.setPro(p && p.active));
   socket.on('wheelSpin', s => view.enqueue(s));
   socket.on('clear', () => view.clear());
 </script>

@@ -16,13 +16,16 @@ function WheelView(root, opts = {}) {
     <div class="lv-cw-box">${BOX_SVG()}</div>
     <div class="lv-cw-flash"></div>
     <div class="lv-cw-result" aria-live="polite"></div>
-    <div class="lv-cw-queue"></div>`;
+    <div class="lv-cw-queue"></div>
+    <div class="lv-cw-wm" hidden>LiveLoot</div>`;
   root.appendChild(el);
   const $ = s => el.querySelector(s);
   const who = $('.lv-cw-who'), box = $('.lv-cw-box'), reel = $('.lv-cw-reel'), track = $('.lv-cw-track'),
     ptr = $('.lv-cw-pointer'), flash = $('.lv-cw-flash'), result = $('.lv-cw-result'), queueEl = $('.lv-cw-queue');
 
   let settings = { prizes: [] };
+  let pro = true; // עד שהשרת אומר אחרת, לא מציגים סימן מים
+  const PRO_SOUNDS = ['builtin:jackpot', 'builtin:levelup', 'builtin:epic', 'builtin:arcade'];
   let busy = false, gen = 0, serverPending = 0;
   const queue = [];
   const STEP = 176 + 14, CARD = 176;
@@ -175,7 +178,8 @@ function WheelView(root, opts = {}) {
       `<b dir="auto">${lvEsc(s.name || '')}</b><span>קיבל: <bdi>${lvEsc(label)}</bdi></span>`;
     if (big) {
       if (!opts.muted && !settings.muted) {
-        const snd = settings.bigSound || 'builtin:fanfare';
+        let snd = settings.bigSound || 'builtin:fanfare';
+        if (!pro && PRO_SOUNDS.includes(snd)) snd = 'builtin:fanfare'; // צלילים מיוחדים: רק ב-PRO
         Sound.play(snd);
         if (snd === 'builtin:fanfare') setTimeout(() => Sound.play('builtin:fanfare'), 700);
       }
@@ -237,6 +241,7 @@ function WheelView(root, opts = {}) {
   }
 
   return {
+    setPro(on) { pro = !!on; el.querySelector('.lv-cw-wm').hidden = pro; },
     setSettings(s) {
       settings = { ...s };
       el.classList.toggle('hide-idle', !!s.hideIdle);

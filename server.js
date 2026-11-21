@@ -188,6 +188,87 @@ let state = { topGift: null, lastRoomId: null, followers: { count: 0, avatar: ''
 if (!Array.isArray(state.wheelHistory)) state.wheelHistory = []; // מי זכה בגלגל (רק לפאנל)
 const saveState = () => writeJson(STATE_FILE, state);
 
+// ---------- PRO ----------
+// בלי שרת ובלי סיסמאות: רשימת ה-PRO היא קובץ ציבורי בריפו (docs/pro.json) עם שמות משתמש בטיקטוק ותאריך סיום.
+// כל אפליקציה קוראת אותו. רק המנהל (מי שיש לו טוקן GitHub עם הרשאת כתיבה לריפו) יכול לשנות אותו.
+// הטוקן נשמר רק במחשב של המנהל, בקובץ נפרד, ולא נשלח אף פעם לפאנל או לווידג'טים.
+const PRO_REPO = 'LiveBit-System/liveloot', PRO_PATH = 'docs/pro.json';
+const PRO_PAGES = 'https://livebit-system.github.io/liveloot/pro.json';
+const ADMIN_FILE = path.join(DATA_DIR, 'admin.json');
+const PRO_DEFAULT_HOWTO = 'כדי לקבל PRO ל-30 יום: היכנסו ללייב של Liroy בטיקטוק ותרמו 400 מטבעות. ה-PRO יופעל על שם המשתמש שלכם תוך כמה דקות.';
+let admin = readJson(ADMIN_FILE, {});
+const proUser = u => String(u || '').trim().replace(/^@/, '').toLowerCase();
+if (!state.proList || typeof state.proList !== 'object') state.proList = { users: {} };
+if (!state.donors) state.donors = {};
+function proUntil(u) { const e = state.proList.users?.[proUser(u)]; return e ? Number(e.until) || 0 : 0; }
+const isPro = () => proUntil(config.username) > Date.now();
+function proInfo() {
+  return { active: isPro(), until: proUntil(config.username), username: config.username || '',
+    avatar: state.followers?.avatar || '', name: state.followers?.name || '',
+    howto: state.proList.howto || PRO_DEFAULT_HOWTO, checkedAt: state.proCheckedAt || 0, admin: !!admin.token };
+}
+const emitPro = () => io.emit('pro', proInfo());
+function cleanProList(j) {
+  const users = {};
+  for (const [k, v] of Object.entries(j?.users || {})) {
+    const u = proUser(k), until = Number(v?.until) || 0;
+    if (/^[a-z0-9._]{1,40}$/.test(u) && until > 0) users[u] = { until };
+  }
+  return { howto: typeof j?.howto === 'string' ? j.howto.slice(0, 400) : '', users };
+}
+async function fetchProList() {
+  const tries = [
+    () => fetch(`https://api.github.com/repos/${PRO_REPO}/contents/${PRO_PATH}`, { headers: { Accept: 'application/vnd.github.raw+json', 'User-Agent': 'LiveLoot' } }),
+    () => fetch(PRO_PAGES + '?t=' + Date.now())
+  ];
+  for (const t of tries) {
+    try {
+      const r = await t();
+      if (!r.ok) continue;
+      state.proList = cleanProList(await r.json());
+      state.proCheckedAt = Date.now();
+      saveState();
+      break;
+    } catch {}
+  }
+  emitPro();
+}
+setTimeout(fetchProList, 1500);
+setInterval(fetchProList, 10 * 60 * 1000);
+
+// פעולות מנהל: קוראים ומעדכנים את docs/pro.json דרך ה-API של GitHub
+async function gh(method, url, body) {
+  const r = await fetch('https://api.github.com' + url, {
+    method, body: body ? JSON.stringify(body) : undefined,
+    headers: { Authorization: 'Bearer ' + admin.token, Accept: 'application/vnd.github+json', 'User-Agent': 'LiveLoot', 'Content-Type': 'application/json' }
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(r.status === 401 ? 'הטוקן לא תקין או שפג תוקפו' : r.status === 403 || r.status === 404 ? 'לטוקן אין הרשאה לריפו של LiveLoot' : (j.message || 'שגיאה ' + r.status));
+  return j;
+}
+async function updateProFile(change, message) {
+  const cur = await gh('GET', `/repos/${PRO_REPO}/contents/${PRO_PATH}`).catch(e => { if (/הרשאה/.test(e.message)) return null; throw e; });
+  let list = cur ? cleanProList(JSON.parse(Buffer.from(cur.content || '', 'base64').toString('utf8') || '{}')) : { howto: PRO_DEFAULT_HOWTO, users: {} };
+  if (!list.howto) list.howto = PRO_DEFAULT_HOWTO;
+  change(list);
+  for (const [k, v] of Object.entries(list.users)) if (v.until < Date.now() - 7 * 864e5) delete list.users[k]; // ניקוי ישנים
+  const content = Buffer.from(JSON.stringify(list, null, 2) + '\n', 'utf8').toString('base64');
+  await gh('PUT', `/repos/${PRO_REPO}/contents/${PRO_PATH}`, { message, content, ...(cur?.sha ? { sha: cur.sha } : {}) });
+  state.proList = list; state.proCheckedAt = Date.now(); saveState();
+  emitPro();
+  return list;
+}
+const adminList = () => Object.entries(state.proList.users || {}).map(([u, v]) => ({ username: u, until: v.until })).sort((a, b) => b.until - a.until);
+const donorsList = () => Object.values(state.donors || {}).sort((a, b) => b.coins - a.coins).slice(0, 50);
+function trackDonor(evt) {
+  if (evt.test || !evt.uid) return;
+  const u = proUser(evt.uid);
+  const d = state.donors[u] || { username: u, name: evt.name || u, avatar: '', coins: 0 };
+  d.coins += Number(evt.coins) || 0; d.name = evt.name || d.name; d.avatar = evt.avatar || d.avatar;
+  state.donors[u] = d;
+  if (admin.token) io.emit('proDonors', donorsList());
+}
+
 // ---------- שרת ----------
 const app = express();
 const server = http.createServer(app);
@@ -759,7 +840,7 @@ function handleEvent(evt) {
   evt.rule = rule ? rule.name : null;
   pushFeed(evt);
   if (rule) sendAlert(rule, evt);
-  if (evt.type === 'gift') { checkWeeks(); updateTopGift(evt); updateTopStreak(evt); }
+  if (evt.type === 'gift') { checkWeeks(); updateTopGift(evt); updateTopStreak(evt); trackDonor(evt); }
   timerFromEvent(evt);
   if (evt.type === 'follow') addFollower(evt);
   const wt = config.wheel;
@@ -843,6 +924,7 @@ async function connectLive() {
     if (s?.roomId && s.roomId !== state.lastRoomId) {
       state.lastRoomId = s.roomId;
       followSpun.clear();
+      state.donors = {}; // תורמים של הלייב הזה (לפאנל המנהל)
       state.followers.session = 0; // לייב חדש: סופרים מחדש את העוקבים של הלייב
       state.followers.lost = 0;
       if (config.topGift.period === 'live') resetTopGift(); else saveState();
@@ -855,6 +937,7 @@ async function connectLive() {
       if (owner.name) state.followers.name = owner.name;
       saveState();
       emitFollowers({ initial: true });
+      emitPro();
       console.log(`[TikTok] followers: ${state.followers.count}`);
     }
     setStatus({ state: 'live', message: 'מחובר ללייב של ' + at });
@@ -952,6 +1035,40 @@ io.on('connection', socket => {
     const f = state.followers;
     emitFollowers({ count: Math.max(0, f.count - 1), lost: (f.lost || 0) + 1, lostNow: 1 });
   });
+  socket.emit('pro', proInfo());
+  if (admin.token) { socket.emit('proAdmin', adminList()); socket.emit('proDonors', donorsList()); }
+  socket.on('proRefresh', () => fetchProList());
+  const reply = (ack, p) => { if (typeof ack === 'function') ack(p); };
+  socket.on('adminLogin', async (token, ack) => {
+    token = String(token || '').trim();
+    if (!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(token)) return reply(ack, { ok: false, error: 'זה לא נראה כמו טוקן של GitHub' });
+    const prev = admin.token; admin.token = token;
+    try {
+      const repo = await gh('GET', `/repos/${PRO_REPO}`);
+      if (!repo.permissions?.push && !repo.permissions?.admin) throw new Error('לטוקן אין הרשאת כתיבה לריפו של LiveLoot');
+      writeJson(ADMIN_FILE, admin);
+      emitPro(); io.emit('proAdmin', adminList()); io.emit('proDonors', donorsList());
+      reply(ack, { ok: true });
+    } catch (e) { admin.token = prev; reply(ack, { ok: false, error: e.message }); }
+  });
+  socket.on('adminLogout', () => { admin = {}; try { fs.unlinkSync(ADMIN_FILE); } catch {} emitPro(); });
+  socket.on('adminGrant', async (d, ack) => {
+    if (!admin.token) return reply(ack, { ok: false, error: 'רק המנהל יכול לתת PRO' });
+    const u = proUser(d?.username), days = Math.min(3650, Math.max(1, Math.floor(Number(d?.days) || 30)));
+    if (!/^[a-z0-9._]{1,40}$/.test(u)) return reply(ack, { ok: false, error: 'שם משתמש לא תקין' });
+    try {
+      let until = 0;
+      await updateProFile(l => { const base = Math.max(Date.now(), l.users[u]?.until || 0); until = base + days * 864e5; l.users[u] = { until }; }, `PRO: ${u} +${days}d`);
+      io.emit('proAdmin', adminList());
+      reply(ack, { ok: true, username: u, until });
+    } catch (e) { reply(ack, { ok: false, error: e.message }); }
+  });
+  socket.on('adminRevoke', async (name, ack) => {
+    if (!admin.token) return reply(ack, { ok: false, error: 'רק המנהל יכול להסיר PRO' });
+    const u = proUser(name);
+    try { await updateProFile(l => { delete l.users[u]; }, `PRO: remove ${u}`); io.emit('proAdmin', adminList()); reply(ack, { ok: true }); }
+    catch (e) { reply(ack, { ok: false, error: e.message }); }
+  });
   socket.emit('autostart', autostartInfo());
   socket.on('setAutostart', on => {
     try { setAutostart(!!on); } catch (e) { console.error('[autostart]', e.message); }
@@ -994,7 +1111,7 @@ io.on('connection', socket => {
     config = { ...config, ...patch };
     saveConfig();
     io.emit('config', config);
-    if (patch.username) setStatus({ username: config.username });
+    if (patch.username !== undefined) { setStatus({ username: config.username }); emitPro(); }
   });
 });
 

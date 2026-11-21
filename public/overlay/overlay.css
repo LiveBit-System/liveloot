@@ -547,3 +547,7 @@
 .lv-tm-add { display: flex; align-items: center; gap: 10px; padding: calc(6px * var(--tm-size, 1)) calc(16px * var(--tm-size, 1)); border-radius: 999px; background: var(--tm-accent); color: var(--tm-ink); border: calc(4px * var(--tm-size, 1)) solid var(--tm-ink); font-weight: 800; font-size: calc(24px * var(--tm-size, 1)); animation: lv-tm-in .4s cubic-bezier(.2,1.6,.4,1); transition: opacity .4s, transform .4s; }
 .lv-tm-add.out { opacity: 0; transform: translateY(-10px); }
 @keyframes lv-tm-in { from { opacity: 0; transform: translateY(20px) scale(.8); } }
+
+/* סימן מים בגרסה החינמית */
+.lv-cw-wm { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); padding: 6px 16px; border-radius: 999px;
+  background: rgba(14, 10, 26, .62); color: #fff; font: 800 22px/1 'Rubik', system-ui, sans-serif; letter-spacing: .02em; opacity: .85; pointer-events: none; }

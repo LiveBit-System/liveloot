@@ -20,6 +20,8 @@
   const socket = io();
   socket.on('config', c => view.setSettings(c.timer || {}));
   socket.on('timer', d => view.setData(d));
+  // טיימר סאבתון: רק ב-PRO
+  socket.on('pro', p => { document.body.style.visibility = p && p.active ? '' : 'hidden'; });
 </script>
 </body>
 </html>

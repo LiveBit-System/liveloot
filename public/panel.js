@@ -1081,3 +1081,100 @@ $('#wh-bigSoundTry').addEventListener('click', () => Sound.play($('#wh-bigSound'
 const syncLuck = () => { const on = $('#wh-luckBoost').checked; $('.luck-fields').hidden = !on; };
 $('#wh-luckBoost').addEventListener('change', syncLuck);
 socket.on('config', () => setTimeout(syncLuck, 0));
+
+// ---------- משתמש ו-PRO ----------
+// המשתמש הוא שם המשתמש בטיקטוק. רשימת ה-PRO מגיעה מהשרת (קובץ ציבורי ש-Liroy מעדכן מפאנל המנהל)
+let PRO = { active: false, username: '' };
+const cleanUser = v => String(v || '').trim().replace(/^@/, '').replace(/\s+/g, '');
+const fmtDate = t => new Date(t).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' });
+function avatarInto(el, url, name) {
+  el.textContent = '';
+  if (url) { const i = new Image(); i.alt = ''; i.referrerPolicy = 'no-referrer'; i.src = url; i.onerror = () => { el.textContent = (name || '?')[0].toUpperCase(); }; el.appendChild(i); }
+  else el.textContent = (name || '?')[0].toUpperCase();
+}
+function saveUser(u) {
+  u = cleanUser(u);
+  if (!/^[A-Za-z0-9._]{2,24}$/.test(u)) { toast('שם משתמש בטיקטוק: רק אותיות באנגלית, מספרים, נקודה וקו תחתון'); return false; }
+  socket.emit('saveConfig', { username: u });
+  $('#username').value = u;
+  return true;
+}
+function renderPro(p) {
+  PRO = p || PRO;
+  const u = PRO.username || '';
+  const hasUser = !!u;
+  avatarInto($('#acctAv'), PRO.avatar, u || '?');
+  avatarInto($('#proAv'), PRO.avatar, u || '?');
+  $('#acctName').textContent = hasUser ? '@' + u : 'משתמש חדש';
+  $('#acctSub').textContent = !hasUser ? 'לחץ ליצירת משתמש' : PRO.active ? 'PRO עד ' + fmtDate(PRO.until) : 'גרסה חינמית';
+  $('#acctPro').hidden = $('#proBadge').hidden = !PRO.active;
+  $('#proName').textContent = hasUser ? '@' + u : 'עוד לא יצרת משתמש';
+  $('#proState').textContent = !hasUser ? '' : PRO.active ? 'PRO פעיל עד ' + fmtDate(PRO.until)
+    : PRO.until ? 'ה-PRO הסתיים ב-' + fmtDate(PRO.until) : 'גרסה חינמית';
+  if (document.activeElement !== $('#proUserInput')) $('#proUserInput').value = u;
+  $('#proHowto').textContent = PRO.howto || '';
+  $$('[data-pro-howto]').forEach(e => e.textContent = PRO.howto || '');
+  // חסימות בגרסה החינמית
+  $$('.pro-gated').forEach(sec => { sec.classList.toggle('pro-locked', !PRO.active); sec.querySelector('[data-pro-lock]').hidden = PRO.active; });
+  $$('option[data-pro]').forEach(o => { o.disabled = !PRO.active; });
+  const bs = $('#wh-bigSound');
+  if (bs && !PRO.active && bs.selectedOptions[0]?.dataset.pro !== undefined) bs.value = 'builtin:fanfare';
+  $('#adminBox').hidden = !PRO.admin;
+  if (PRO.admin) $('#adminLogin').hidden = true;
+  $('#newUser').hidden = hasUser;
+}
+socket.on('pro', renderPro);
+$('#acct').addEventListener('click', () => showView('pro'));
+$$('[data-go-pro]').forEach(b => b.addEventListener('click', () => showView('pro')));
+$('#proRefresh').addEventListener('click', () => { socket.emit('proRefresh'); toast('בודק...'); });
+$('#proUserForm').addEventListener('submit', e => { e.preventDefault(); if (saveUser($('#proUserInput').value)) toast('המשתמש נשמר'); });
+$('#newUserForm').addEventListener('submit', e => { e.preventDefault(); if (saveUser($('#newUserInput').value)) { $('#newUser').hidden = true; toast('המשתמש נוצר'); } });
+
+// ניהול: נפתח רק עם Ctrl+Shift+L, ועובד רק עם טוקן שיש לו הרשאת כתיבה לריפו
+addEventListener('keydown', e => {
+  if (e.ctrlKey && e.shiftKey && e.code === 'KeyL' && !PRO.admin) { showView('pro'); $('#adminLogin').hidden = false; $('#adminToken').focus(); }
+});
+$('#adminForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const t = $('#adminToken').value.trim();
+  socket.emit('adminLogin', t, r => {
+    $('#adminToken').value = '';
+    if (r?.ok) { toast('נכנסת כמנהל'); $('#adminLogin').hidden = true; } else toast(r?.error || 'הכניסה נכשלה');
+  });
+});
+$('#adminOut').addEventListener('click', () => { socket.emit('adminLogout'); toast('התנתקת מניהול'); });
+function grant(username, days) {
+  username = cleanUser(username);
+  if (!username) return;
+  toast('נותן PRO ל-@' + username + '...');
+  socket.emit('adminGrant', { username, days }, r => {
+    if (r?.ok) toast(`@${r.username} קיבל PRO עד ${fmtDate(r.until)}`); else toast(r?.error || 'לא הצלחתי לתת PRO');
+  });
+}
+$('#grantForm').addEventListener('submit', e => { e.preventDefault(); grant($('#grantUser').value, Number($('#grantDays').value)); $('#grantUser').value = ''; });
+function row(user, sub, btnText, onClick, hot) {
+  const li = document.createElement('li');
+  li.className = 'pro-row' + (hot ? ' hot' : '');
+  const av = document.createElement('span'); av.className = 'acct-av'; avatarInto(av, user.avatar, user.username);
+  const t = document.createElement('span'); t.className = 'pro-row-txt';
+  const b = document.createElement('b'); b.dir = 'ltr'; b.textContent = '@' + user.username;
+  const s = document.createElement('small'); s.textContent = sub;
+  t.append(b, s);
+  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn btn-sm'; btn.textContent = btnText; btn.addEventListener('click', onClick);
+  li.append(av, t, btn);
+  return li;
+}
+socket.on('proDonors', list => {
+  const ul = $('#donorList'); ul.textContent = '';
+  if (!list?.length) { ul.innerHTML = '<li class="hint">עוד אין תורמים בלייב הזה.</li>'; return; }
+  list.forEach(d => ul.appendChild(row(d, `${d.name} · ${d.coins.toLocaleString('he-IL')} מטבעות`, 'תן PRO', () => grant(d.username, 30), d.coins >= 400)));
+});
+socket.on('proAdmin', list => {
+  const ul = $('#proList'); ul.textContent = '';
+  const now = Date.now();
+  const live = (list || []).filter(x => x.until > now);
+  if (!live.length) { ul.innerHTML = '<li class="hint">עוד אין משתמשי PRO.</li>'; return; }
+  live.forEach(x => ul.appendChild(row(x, 'עד ' + fmtDate(x.until), 'הסר', () => {
+    socket.emit('adminRevoke', x.username, r => toast(r?.ok ? 'ה-PRO של @' + x.username + ' הוסר' : (r?.error || 'לא הצלחתי להסיר')));
+  })));
+});
