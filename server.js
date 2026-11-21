@@ -1136,7 +1136,17 @@ server.on('error', e => {
 
 if (giftCatalog.length < 30) setTimeout(() => refreshGiftCatalog().catch(() => {}), 4000);
 global.__livelootNotice = msg => io.emit('appNotice', msg);
+// localtest.me מחזיר גם ::1 (IPv6) וגם 127.0.0.1. LIVE Studio מנסה רק את ::1, ולכן מקשיבים גם שם.
+// זה עדיין רק המחשב עצמו: ::1 היא כתובת הלולאה המקומית, כמו 127.0.0.1
+const net = require('net');
+const ip6 = net.createServer(c => {
+  const up = net.connect(PORT, '127.0.0.1');
+  c.pipe(up).pipe(c);
+  c.on('error', () => up.destroy()); up.on('error', () => c.destroy());
+});
+ip6.on('error', e => console.log('[ipv6] not listening on ::1:', e.code));
 server.listen(PORT, '127.0.0.1', () => {
+  ip6.listen(PORT, '::1');
   if (global.__livelootReady) global.__livelootReady();
   console.log('');
   console.log('  LiveLoot is running');
