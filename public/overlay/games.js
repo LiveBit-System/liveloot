@@ -1,5 +1,5 @@
 // ווידג'טים של PRO: טבלת מובילים, קרב מתנות, מכירה פומבית
-const fmtN = n => Number(n || 0).toLocaleString('he-IL');
+const fmtN = n => Number(n || 0).toLocaleString(LL_LOCALE);
 const avatarHtml = (r, cls) => r.avatar
   ? `<img class="${cls}" src="${lvEsc(r.avatar)}" alt="" referrerpolicy="no-referrer">`
   : `<span class="${cls} lv-av-letter">${lvEsc((r.name || '?').trim()[0] || '?')}</span>`;

@@ -617,3 +617,6 @@
 .lv-au-win b { font-size: 64px; -webkit-text-stroke: 9px #200A3A; paint-order: stroke fill; }
 .lv-au-win span { display: flex; gap: 8px; align-items: center; font-size: 36px; font-weight: 800; direction: ltr; color: var(--au-accent); }
 @keyframes lv-pop-in { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+
+/* ווידג'טים באנגלית (שמאל לימין) */
+html[dir="ltr"] .lv, html[dir="ltr"] .lv-cw-card, html[dir="ltr"] .lv-board, html[dir="ltr"] .lv-battle, html[dir="ltr"] .lv-auction { direction: ltr; }

@@ -524,3 +524,5 @@
 }
 @keyframes lv-mx-in { from { opacity: 0; transform: scale(.6) rotate(-6deg); } }
 @keyframes lv-mx-out { to { opacity: 0; transform: scale(.85); } }
+/* ווידג'טים באנגלית (שמאל לימין) */
+html[dir="ltr"] .lv, html[dir="ltr"] .lv-cw-card, html[dir="ltr"] .lv-board, html[dir="ltr"] .lv-battle, html[dir="ltr"] .lv-auction { direction: ltr; }

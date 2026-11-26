@@ -6,7 +6,7 @@ function FollowersView(root, opts = {}) {
   let settings = {};
   let data = { count: 0, avatar: '', name: '', session: 0 };
   let shown = 0, anim = null;
-  const fmt = n => Number(n || 0).toLocaleString('he-IL');
+  const fmt = n => Number(n || 0).toLocaleString(LL_LOCALE);
 
   function render() {
     const s = settings;

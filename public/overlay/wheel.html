@@ -2,6 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
+<script src="/i18n.js"></script>
 <title>LiveLoot - גלגל מזל</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@700;800;900&family=Noto+Sans+Hebrew:wght@400;500;700&display=swap" rel="stylesheet">
@@ -17,6 +18,7 @@
 <script>
   // מומלץ ב-LIVE Studio: רזולוציה 700 על 700
   const socket = io(location.pathname.startsWith('/w/') ? { query: { key: location.pathname.split('/')[2] } } : undefined);
+socket.on('langChanged', () => location.reload());
   // הגלגל בלייב מודיע לשרת מתי הפרס מופיע ומתי הסיבוב נגמר. ככה רשימת הזוכים בפאנל
   // מתעדכנת בדיוק כשהצופים רואים, והסיבוב הבא מתחיל רק כשהקודם באמת נגמר
   const view = WheelView(document.body, {

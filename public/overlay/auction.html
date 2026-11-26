@@ -2,6 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
+<script src="/i18n.js"></script>
 <title>LiveLoot - מכירה פומבית</title>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/overlay/overlay.css">
@@ -15,6 +16,7 @@
 <script>
   const view = AuctionView(document.body, { muted: new URLSearchParams(location.search).has('muted') });
   const socket = io();
+socket.on('langChanged', () => location.reload());
   socket.on('config', c => view.setSettings(c.auction || {}));
   socket.on('auction', d => view.setData(d));
   // ווידג'ט של PRO

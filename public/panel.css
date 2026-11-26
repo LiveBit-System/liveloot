@@ -702,3 +702,9 @@ svg { flex: 0 0 auto; }
 .rc-story-wrap { display: grid; gap: 12px; }
 .rc-story-wrap canvas { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line); }
 @media (max-width: 1100px) { .recap-grid { grid-template-columns: 1fr; } }
+
+/* ממשק באנגלית (שמאל לימין) */
+html[dir="ltr"] .switch i::after { right: auto; left: 3px; }
+html[dir="ltr"] .switch input:checked + i::after { transform: translateX(20px); }
+html[dir="ltr"] .acct-txt b { text-align: start; }
+html[dir="ltr"] .feed .meta { text-align: right; }

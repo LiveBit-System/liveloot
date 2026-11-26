@@ -80,7 +80,7 @@ const DEFAULT_EFFECTS = [
 ];
 
 function newAction(a = {}) {
-  return { id: a.id || 'a' + Date.now().toString(36), name: a.name || 'פעולה חדשה', screen: Number(a.screen) || 1, duration: Number(a.duration) || 5,
+  return { id: a.id || 'a' + Date.now().toString(36), name: a.name || T('פעולה חדשה'), screen: Number(a.screen) || 1, duration: Number(a.duration) || 5,
     sound: a.sound || '', soundName: a.soundName || '', video: a.video || '', videoName: a.videoName || '', image: a.image || '', imageName: a.imageName || '',
     volume: a.volume ?? 100, caption: a.caption || '', effect: a.effect || 'none', voice: a.voice || 'none', voiceText: a.voiceText || '', wheel: !!a.wheel,
     cooldown: Number(a.cooldown) || 0, userCooldown: Number(a.userCooldown) || 0 };
@@ -161,6 +161,7 @@ function writeJson(file, data) {
 }
 
 const TERMS_VERSION = '2026-11';
+const FIRST_RUN = !fs.existsSync(CONFIG_FILE);
 let config = { ...DEFAULT_CONFIG, ...readJson(CONFIG_FILE, {}) };
 if (config.topGift && !config.topGift.period) config.topGift.period = config.topGift.resetOnNewStream === false ? 'never' : 'live';
 config.topGift = { ...DEFAULT_TOPGIFT, ...(config.topGift || {}) };
@@ -185,6 +186,22 @@ if (!Array.isArray(config.actions) || !Array.isArray(config.events)) {
   }
 }
 delete config.effects; delete config.knownEffects;
+// ---------- שפה ----------
+// auto = לפי שפת המחשב (main.js בודק את Windows). משתמשים ותיקים נשארים בעברית
+const I18N = require('./public/i18n.js');
+const T = s => I18N.tr(s);
+const SYS_LANG = ['he', 'en'].includes(process.env.LIVELOOT_SYSLANG) ? process.env.LIVELOOT_SYSLANG
+  : (/^(he|iw)/i.test(Intl.DateTimeFormat().resolvedOptions().locale || '') ? 'he' : 'en');
+if (!['auto', 'he', 'en'].includes(config.lang)) config.lang = FIRST_RUN ? 'auto' : 'he';
+const langNow = () => (config.lang === 'he' || config.lang === 'en') ? config.lang : SYS_LANG;
+I18N.setLang(langNow());
+global.__livelootLang = langNow;
+// משתמש חדש באנגלית: גם טקסטי ברירת המחדל (פרסים, כותרות, התראות) באנגלית
+function translateDefaults(o) {
+  if (Array.isArray(o)) return o.map(translateDefaults);
+  if (o && typeof o === 'object') { for (const k of Object.keys(o)) if (k !== 'username') o[k] = translateDefaults(o[k]); return o; }
+  return typeof o === 'string' ? T(o) : o;
+}
 config.actions = config.actions.map(newAction);
 config.events = config.events.map(newEvent);
 if (typeof config.fxVolume !== 'number') config.fxVolume = 80;
@@ -199,6 +216,7 @@ if (typeof config.wheel.triggerGift === 'string') {
   delete config.wheel.triggerGift;
 }
 if (!Array.isArray(config.wheel.triggerGifts)) config.wheel.triggerGifts = [];
+if (FIRST_RUN && langNow() === 'en') config = translateDefaults(JSON.parse(JSON.stringify(config)));
 const saveConfig = () => writeJson(CONFIG_FILE, config);
 saveConfig();
 
@@ -306,6 +324,13 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+// השפה של הממשק: כל דף טוען את /i18n.js, שמגיע עם השפה והמילון
+const I18N_ENGINE = fs.readFileSync(path.join(ROOT, 'public/i18n.js'), 'utf8');
+const I18N_EN = fs.readFileSync(path.join(ROOT, 'public/i18n-en.json'), 'utf8');
+app.get('/i18n.js', (req, res) => {
+  res.set('Cache-Control', 'no-store').type('application/javascript');
+  res.send(`window.LL_LANG=${JSON.stringify(langNow())};window.LL_EN=${I18N_EN};${req.query.dom === '0' ? 'window.LL_NO_DOM=true;' : ''}\n${I18N_ENGINE}`);
+});
 app.use('/', express.static(path.join(ROOT, 'public')));
 app.use('/sounds', express.static(SOUNDS_DIR));
 app.use('/wheel-img', express.static(WHEEL_IMG_DIR));
@@ -372,16 +397,19 @@ app.get('/wheel', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/whe
 app.get('/screen/:n', (req, res) => res.sendFile(path.join(ROOT, 'public/overlay/alerts.html')));
 // ---------- קול: Edge TTS בעברית (חינמי, דרך האינטרנט) ----------
 const TTS_VOICES = { avri: 'he-IL-AvriNeural', hila: 'he-IL-HilaNeural' };
+// בממשק באנגלית, טקסט בלי עברית נקרא בקול אנגלי
+const TTS_VOICES_EN = { avri: 'en-US-GuyNeural', hila: 'en-US-JennyNeural' };
 const ttsCache = new Map();
 // מנקה אימוג'ים וסימנים שהקריין היה מקריא בצורה מוזרה
 const cleanSpeech = t => String(t || '').replace(/[^\p{L}\p{N}\s.,!?'"-]/gu, ' ').replace(/\s+/g, ' ').trim().slice(0, 140);
 const xmlEsc = t => t.replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 async function synth(text, voice) {
   if (!MsEdgeTTS) throw new Error('msedge-tts not installed');
-  const key = voice + '|' + text;
+  const key = langNow() + '|' + voice + '|' + text;
   if (ttsCache.has(key)) return ttsCache.get(key);
   const tts = new MsEdgeTTS();
-  await tts.setMetadata(TTS_VOICES[voice] || TTS_VOICES.avri, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+  const set = langNow() === 'en' && !/[\u0590-\u05FF]/.test(text) ? TTS_VOICES_EN : TTS_VOICES;
+  await tts.setMetadata(set[voice] || set.avri, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
   const { audioStream } = tts.toStream(xmlEsc(text));
   const buf = await new Promise((resolve, reject) => {
     const chunks = [];
@@ -395,7 +423,7 @@ async function synth(text, voice) {
   return buf;
 }
 app.get('/api/tts', async (req, res) => {
-  const text = cleanSpeech(req.query.text) || 'צופה';
+  const text = cleanSpeech(req.query.text) || T('צופה');
   try {
     const buf = await synth(text, String(req.query.voice || 'avri'));
     res.set('Content-Type', 'audio/mpeg').send(buf);
@@ -509,7 +537,7 @@ function findUser(data) {
 const imgUrl = img => img?.urlList?.[0] || img?.url_list?.[0] || img?.url?.[0] || '';
 const pic = data => { const u = findUser(data); return imgUrl(u?.profilePicture) || imgUrl(u?.avatarThumb) || ''; };
 const userId = data => { const u = findUser(data); return u?.uniqueId || u?.displayId || ''; };
-const displayName = data => { const u = findUser(data); return u?.nickname || u?.uniqueId || u?.displayId || 'צופה'; };
+const displayName = data => { const u = findUser(data); return u?.nickname || u?.uniqueId || u?.displayId || T('צופה'); };
 
 // ---------- Top Gift ----------
 function giftValue(evt) {
@@ -676,7 +704,7 @@ function chatTtsFromEvent(evt) {
   text = text.slice(0, Math.max(10, Number(c.maxLen) || 120));
   if (!text.replace(/[^\p{L}\p{N}]/gu, '')) return;
   chatSpoke.set(who, now);
-  io.emit('chatSpeak', { text: (c.readName ? `${evt.name} אומר: ` : '') + text, voice: c.voice, volume: Number(c.volume) || 100 });
+  io.emit('chatSpeak', { text: (c.readName ? T('{0} אומר:').replace('{0}', evt.name) + ' ' : '') + text, voice: c.voice, volume: Number(c.volume) || 100 });
 }
 
 // ---------- סיכום לייב ----------
@@ -937,9 +965,9 @@ function recordWheelWin(id) {
   if (!b || b.id !== id || b.recorded || b.gen !== wheelGen) return;
   b.recorded = true;
   const { evt, prizes, index } = b;
-  const prize = String(prizes[index].text || '').trim() || 'פרס';
+  const prize = String(prizes[index].text || '').trim() || T('פרס');
   pushFeed({ id: Date.now() + Math.random(), time: Date.now(), type: 'wheel', name: evt.name, text: prize, test: !!evt.test });
-  const win = { id, at: Date.now(), name: evt.name || 'צופה', uid: evt.uid || '',
+  const win = { id, at: Date.now(), name: evt.name || T('צופה'), uid: evt.uid || '',
     prize, big: !!prizes[index].big, room: state.lastRoomId || null, test: !!evt.test, via: evt.type === 'follow' ? 'follow' : evt.gift ? evt.gift : '' };
   state.wheelHistory.unshift(win);
   if (state.wheelHistory.length > 1000) state.wheelHistory.length = 1000;
@@ -1245,7 +1273,7 @@ io.on('connection', socket => {
     socket.emit('config', config); socket.emit('board', { list: boardTop() });
     socket.emit('battle', battleInfo()); socket.emit('auction', auctionInfo()); socket.emit('recap', recapData());
   });
-  socket.on('testChatSpeak', () => io.emit('chatSpeak', { text: 'luna.live אומר: איזה לייב מטורף!', voice: config.chatTts.voice, volume: Number(config.chatTts.volume) || 100 }));
+  socket.on('testChatSpeak', () => io.emit('chatSpeak', { text: T('luna.live אומר: איזה לייב מטורף!'), voice: config.chatTts.voice, volume: Number(config.chatTts.volume) || 100 }));
   socket.emit('pro', proInfo());
   if (admin.token) { socket.emit('proAdmin', adminList()); socket.emit('proDonors', donorsList()); }
   socket.on('proRefresh', () => fetchProList());
@@ -1303,15 +1331,21 @@ io.on('connection', socket => {
     const rule = config.rules.find(r => r.id === id);
     if (!rule) return;
     const sample = rule.trigger === 'gift'
-      ? { type: 'gift', name: 'בדיקה', gift: firstGift(rule.giftName) || 'Rose', count: 1, coins: Math.max(rule.minCoins || 1, 1) }
-      : rule.trigger === 'like' ? { type: 'like', name: 'בדיקה', count: Math.max(rule.minCoins || 1, 1) }
-      : { type: rule.trigger, name: 'בדיקה' };
+      ? { type: 'gift', name: T('בדיקה'), gift: firstGift(rule.giftName) || 'Rose', count: 1, coins: Math.max(rule.minCoins || 1, 1) }
+      : rule.trigger === 'like' ? { type: 'like', name: T('בדיקה'), count: Math.max(rule.minCoins || 1, 1) }
+      : { type: rule.trigger, name: T('בדיקה') };
     const evt = { ...sample, id: 't' + Date.now(), time: Date.now(), test: true, rule: rule.name };
     pushFeed(evt);
     sendAlert(rule, evt);
   });
   // תנאי השימוש: מאשרים פעם אחת (ושוב רק אם הגרסה שלהם משתנה)
   socket.emit('appInfo', { version: process.env.LIVELOOT_VERSION || '', terms: TERMS_VERSION, accepted: config.termsAccepted === TERMS_VERSION });
+  // החלפת שפה מההגדרות: כל הדפים (פאנל, ווידג'טים) נטענים מחדש בשפה החדשה
+  socket.on('setLang', l => {
+    if (!['auto', 'he', 'en'].includes(l)) return;
+    config.lang = l; saveConfig(); I18N.setLang(langNow());
+    io.emit('langChanged', langNow());
+  });
   socket.on('acceptTerms', () => { config.termsAccepted = TERMS_VERSION; saveConfig(); io.emit('appInfo', { version: process.env.LIVELOOT_VERSION || '', terms: TERMS_VERSION, accepted: true }); });
   socket.on('saveConfig', patch => {
     if (patch.topGift) patch.topGift = { ...config.topGift, ...patch.topGift };

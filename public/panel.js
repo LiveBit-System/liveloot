@@ -1,4 +1,8 @@
 const socket = io();
+socket.on('langChanged', () => location.reload());
+// שפת הממשק (אוטומטי = לפי שפת המחשב)
+socket.on('config', c => { const sel = document.getElementById('langSel'); if (sel && c && c.lang) sel.value = c.lang; });
+document.getElementById('langSel')?.addEventListener('change', e => socket.emit('setLang', e.target.value));
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 let config = null;
@@ -7,7 +11,7 @@ let topState = null;
 
 const TRIGGER_NAME = { gift: 'מתנה', follow: 'עוקב חדש', share: 'שיתוף', like: 'לייקים', chat: 'פקודה בצ׳אט' };
 const BUILTIN_SOUNDS = [['none', 'בלי סאונד'], ['builtin:pop', 'פופ (מובנה)'], ['builtin:coin', 'מטבע (מובנה)'], ['builtin:fanfare', 'חגיגה (מובנה)']];
-const fmt = n => Number(n || 0).toLocaleString('he-IL');
+const fmt = n => Number(n || 0).toLocaleString(LL_LOCALE);
 
 function toast(msg) {
   const t = $('#toast');
@@ -83,7 +87,7 @@ function feedItem(e, fresh) {
   const li = document.createElement('li');
   li.dataset.kind = e.type === 'gift' && e.coins >= 100 ? 'big' : e.type;
   if (fresh) li.className = 'fresh';
-  const time = new Date(e.time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  const time = new Date(e.time).toLocaleTimeString(LL_LOCALE, { hour: '2-digit', minute: '2-digit' });
   li.innerHTML = `
     <span class="ico">${FEED_ICON[e.type] || FEED_ICON.chat}</span>
     <div>
@@ -722,8 +726,8 @@ $('#wheelPauseBtn').addEventListener('click', () => {
 // ---------- זוכים בגלגל ----------
 let winners = [], winRoom = null, winScope = 'now';
 const newWins = new Set();
-const dayFmt = new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
-const timeFmt = new Intl.DateTimeFormat('he-IL', { hour: '2-digit', minute: '2-digit' });
+const dayFmt = new Intl.DateTimeFormat(LL_LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
+const timeFmt = new Intl.DateTimeFormat(LL_LOCALE, { hour: '2-digit', minute: '2-digit' });
 function renderWinners() {
   const showTests = $('#winTests').checked;
   const q = $('#winSearch').value.trim().toLowerCase();
@@ -1073,7 +1077,7 @@ socket.on('config', () => setTimeout(syncLuck, 0));
 // המשתמש הוא שם המשתמש בטיקטוק. רשימת ה-PRO מגיעה מהשרת (קובץ ציבורי ש-Liroy מעדכן מפאנל המנהל)
 let PRO = { active: false, username: '' };
 const cleanUser = v => String(v || '').trim().replace(/^@/, '').replace(/\s+/g, '');
-const fmtDate = t => new Date(t).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' });
+const fmtDate = t => new Date(t).toLocaleDateString(LL_LOCALE, { day: 'numeric', month: 'numeric', year: 'numeric' });
 function avatarInto(el, url, name) {
   el.textContent = '';
   if (url) { const i = new Image(); i.alt = ''; i.referrerPolicy = 'no-referrer'; i.src = url; i.onerror = () => { el.textContent = (name || '?')[0].toUpperCase(); }; el.appendChild(i); }
@@ -1154,7 +1158,7 @@ function row(user, sub, btnText, onClick, hot) {
 socket.on('proDonors', list => {
   const ul = $('#donorList'); ul.textContent = '';
   if (!list?.length) { ul.innerHTML = '<li class="hint">עוד אין תורמים בלייב הזה.</li>'; return; }
-  list.forEach(d => ul.appendChild(row(d, `${d.name} · ${d.coins.toLocaleString('he-IL')} מטבעות`, 'תן PRO', () => grant(d.username, 30), d.coins >= 400)));
+  list.forEach(d => ul.appendChild(row(d, `${d.name} · ${d.coins.toLocaleString(LL_LOCALE)} מטבעות`, 'תן PRO', () => grant(d.username, 30), d.coins >= 400)));
 });
 socket.on('proAdmin', list => {
   const ul = $('#proList'); ul.textContent = '';

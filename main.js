@@ -7,7 +7,18 @@ const fs = require('fs');
 let autoUpdater = null;
 try { ({ autoUpdater } = require('electron-updater')); } catch {}
 
+const I18N = require('./public/i18n.js');
 const PORT = 4777;
+
+// שפת המחשב: עברית אם עברית מופיעה בשפות של Windows או באזור, אחרת אנגלית
+function systemLang() {
+  let list = [];
+  try { list = list.concat(app.getPreferredSystemLanguages ? app.getPreferredSystemLanguages() : []); } catch {}
+  try { list.push(app.getSystemLocale ? app.getSystemLocale() : ''); } catch {}
+  try { list.push(app.getLocale()); } catch {}
+  return list.some(l => /^(he|iw)\b/i.test(String(l || ''))) ? 'he' : 'en';
+}
+const tr = s => I18N.tr(s);
 const PANEL = `http://localhost:${PORT}/`;
 
 // רק עותק אחד פתוח. פתיחה שנייה מחזירה את החלון הקיים לקדמת המסך
@@ -30,6 +41,8 @@ function startServer() {
   process.env.LIVELOOT_PORT = String(PORT);
   process.env.LIVELOOT_DATA = data;
   process.env.LIVELOOT_VERSION = app.getVersion();
+  process.env.LIVELOOT_SYSLANG = systemLang();
+  I18N.setLang(process.env.LIVELOOT_SYSLANG);
   // לוג לקובץ, כדי שיהיה מה לבדוק אם משהו לא עובד אצל משתמש
   try {
     const logFile = path.join(data, 'log.txt');
@@ -73,10 +86,11 @@ function createWindow() {
   // סגירת החלון עוצרת את LiveLoot, ואז הווידג'טים בלייב נעלמים (ריבועים אפורים ב-LIVE Studio). שואלים לפני
   win.on('close', e => {
     if (app.__quitting) return;
+    if (global.__livelootLang) I18N.setLang(global.__livelootLang());
     const r = dialog.showMessageBoxSync(win, {
-      type: 'warning', buttons: ['מזער ותשאיר פועל', 'סגור בכל זאת'], defaultId: 0, cancelId: 0,
-      title: 'LiveLoot', message: 'אם תסגור את LiveLoot, הגלגל וההתראות בלייב יפסיקו לעבוד.',
-      detail: 'בזמן לייב צריך להשאיר את LiveLoot פתוח. אפשר פשוט למזער אותו.'
+      type: 'warning', buttons: [tr('מזער ותשאיר פועל'), tr('סגור בכל זאת')], defaultId: 0, cancelId: 0,
+      title: 'LiveLoot', message: tr('אם תסגור את LiveLoot, הגלגל וההתראות בלייב יפסיקו לעבוד.'),
+      detail: tr('בזמן לייב צריך להשאיר את LiveLoot פתוח. אפשר פשוט למזער אותו.')
     });
     if (r === 0) { e.preventDefault(); win.minimize(); } else app.__quitting = true;
   });
@@ -88,8 +102,8 @@ app.whenReady().then(async () => {
   const ok = await startServer();
   if (!ok) {
     dialog.showErrorBox('LiveLoot',
-      'LiveLoot כבר פתוח, או שתוכנה אחרת משתמשת בפורט ' + PORT + '.\n' +
-      'סגור את החלון הקודם של LiveLoot ונסה שוב.');
+      tr('LiveLoot כבר פתוח, או שתוכנה אחרת משתמשת בפורט') + ' ' + PORT + '.\n' +
+      tr('סגור את החלון הקודם של LiveLoot ונסה שוב.'));
     app.exit(0);
     return;
   }

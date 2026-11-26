@@ -2,6 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
+<script src="/i18n.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LiveLoot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -985,6 +986,16 @@
     <!-- ===== הגדרות ===== -->
     <section class="view" data-view="prefs" hidden>
       <div class="view-head"><div><h1>הגדרות</h1></div></div>
+      <div class="panel narrow">
+        <h2>שפה</h2>
+        <label class="field" for="langSel"><span>שפת הממשק</span>
+          <select id="langSel">
+            <option value="auto">אוטומטי (לפי המחשב)</option>
+            <option value="he" data-noi18n>עברית</option>
+            <option value="en" data-noi18n>English</option>
+          </select>
+        </label>
+      </div>
       <div class="panel narrow run-box" id="runBox">
         <h2>שהווידג'טים יעבדו תמיד</h2>
         <p class="hint">הווידג'טים ב-LIVE Studio מופיעים רק כשהכלי רץ. במצב רקע הוא רץ בלי חלון שחור, אז אי אפשר לסגור אותו בטעות.</p>

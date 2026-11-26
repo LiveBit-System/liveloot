@@ -21,7 +21,7 @@ function AlertsView(root, opts = {}) {
   let busy = false, gen = 0;
 
   // מדגיש שם מתנה + ×כמות, או מספר לייקים
-  const highlight = sub => lvEsc(sub).replace(/([A-Za-z][\w ]*?\s?×\d+|×\d+|\d[\d,]*\s?לייקים)/g, '<b dir="ltr">$1</b>');
+  const highlight = sub => lvEsc(sub).replace(/([A-Za-z][\w ]*?\s?×\d+|×\d+|\d[\d,]*\s?(?:לייקים|likes))/g, '<b dir="ltr">$1</b>');
 
   function render(a) {
     const el = document.createElement('div');

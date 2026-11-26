@@ -2,6 +2,8 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
+<script>(function(){var l;try{l=localStorage.getItem('ll_lang')}catch(e){}if(l!=='he'&&l!=='en'){var a=navigator.languages||[navigator.language||''];l=a.some(function(x){return /^(he|iw)/i.test(x)})?'he':'en'}window.LL_LANG=l})();</script>
+<script src="i18n-site.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LiveLoot - התראות וגלגל מזל ללייב בטיקטוק</title>
 <link rel="canonical" href="https://livebit-system.github.io/liveloot/">
@@ -257,6 +259,9 @@
   @media (prefers-reduced-motion: reduce) {
     .crate-box.charging .wheel-root, .kicker b, .chat p { animation: none !important; }
   }
+.side-lang{align-self:flex-start;margin-bottom:10px;padding:6px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:transparent;color:inherit;font:inherit;font-size:13px;cursor:pointer}
+.side-lang:hover{border-color:#FFD23F}
+html[lang="en"] .side-lang [lang="en"],html[lang="he"] .side-lang [lang="he"]{display:none}
 </style>
 </head>
 <body>
@@ -281,6 +286,7 @@
     <a href="#start" data-nav="start"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5"/></svg>הורדה</a>
   </div>
   <div class="side-foot">
+    <button class="side-lang" type="button" data-noi18n onclick="try{localStorage.setItem('ll_lang',LL_LANG==='en'?'he':'en')}catch(e){}location.reload()"><span lang="en">English</span><span lang="he">עברית</span></button>
     <p class="demo-note"><i aria-hidden="true"></i>הדגמה חיה, בלי סאונד</p>
     <a class="side-login side-panel" href="#start" data-dl>הורדה ל-Windows</a>
   </div>

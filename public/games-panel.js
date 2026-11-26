@@ -52,8 +52,8 @@
   // ---------- סיכום לייב ----------
   let recap = { current: {}, history: [] }, pick = 0;
   const ILS = coins => Math.round((coins || 0) * 0.005 * 3.7); // הערכה: ~0.5 סנט למטבע, ~3.7 ש"ח לדולר
-  const n = v => Number(v || 0).toLocaleString('he-IL');
-  const dateOf = t => t ? new Date(t).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }) : '';
+  const n = v => Number(v || 0).toLocaleString(LL_LOCALE);
+  const dateOf = t => t ? new Date(t).toLocaleDateString(LL_LOCALE, { day: 'numeric', month: 'numeric' }) : '';
   const dur = s => { const ms = (s.endedAt || s.lastAt || Date.now()) - (s.startedAt || Date.now()); const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} שעות` : `${m} דקות`; };
   function sessions() { return [recap.current, ...(recap.history || [])].filter(Boolean); }
   function renderRecap() {
@@ -73,17 +73,17 @@
     try { await document.fonts.load('900 80px Rubik'); } catch {}
     const grd = g.createLinearGradient(0, 0, 0, 1920); grd.addColorStop(0, '#2A1660'); grd.addColorStop(1, '#0E0A1A');
     g.fillStyle = grd; g.fillRect(0, 0, 1080, 1920);
-    g.direction = 'rtl'; g.textAlign = 'center';
-    g.fillStyle = '#FFD23F'; g.font = '900 96px Rubik, sans-serif'; g.fillText('סיכום הלייב', 540, 240);
-    g.fillStyle = '#B9B1D0'; g.font = '700 44px Rubik, sans-serif'; g.fillText(dateOf(s.startedAt) + ' · ' + dur(s), 540, 320);
+    g.direction = LLi18n.lang === 'en' ? 'ltr' : 'rtl'; g.textAlign = 'center';
+    g.fillStyle = '#FFD23F'; g.font = '900 96px Rubik, sans-serif'; g.fillText(t('סיכום הלייב'), 540, 240);
+    g.fillStyle = '#B9B1D0'; g.font = '700 44px Rubik, sans-serif'; g.fillText(dateOf(s.startedAt) + ' · ' + t(dur(s)), 540, 320);
     const boxes = [['מטבעות', n(s.coins)], ['מתנות', n(s.gifts)], ['עוקבים חדשים', n(s.follows)], ['לייקים', n(s.likes)]];
     boxes.forEach(([k, v], i) => {
       const x = i % 2 ? 90 : 570, y = 420 + Math.floor(i / 2) * 250;
       g.fillStyle = '#7C4DFF'; roundRect(g, x, y, 420, 210, 36); g.fill();
       g.fillStyle = '#fff'; g.font = '900 84px Rubik, sans-serif'; g.fillText(v, x + 210, y + 110);
-      g.font = '700 40px Rubik, sans-serif'; g.fillStyle = '#E6DDFF'; g.fillText(k, x + 210, y + 172);
+      g.font = '700 40px Rubik, sans-serif'; g.fillStyle = '#E6DDFF'; g.fillText(t(k), x + 210, y + 172);
     });
-    g.fillStyle = '#fff'; g.font = '900 64px Rubik, sans-serif'; g.fillText('תודה לתורמים!', 540, 1020);
+    g.fillStyle = '#fff'; g.font = '900 64px Rubik, sans-serif'; g.fillText(t('תודה לתורמים!'), 540, 1020);
     (s.top || []).slice(0, 5).forEach((d, i) => {
       const y = 1080 + i * 130;
       g.fillStyle = i === 0 ? '#FFD23F' : 'rgba(255,255,255,.1)'; roundRect(g, 110, y, 860, 108, 28); g.fill();

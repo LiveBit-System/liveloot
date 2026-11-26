@@ -17,7 +17,7 @@ function TopGiftView(root, opts = {}) {
   let shownCoins = 0;
   let countAnim = null;
 
-  const fmt = n => Number(n || 0).toLocaleString('he-IL');
+  const fmt = n => Number(n || 0).toLocaleString(LL_LOCALE);
   // מצב רצף (Top Streak): במקום מטבעות מראים כמה ברצף
   const valOf = t => opts.streak ? (t.count || 0) : (t.coins || 0);
   const numIcon = () => opts.streak ? '<b class="lv-x">×</b>' : ICONS.coin;

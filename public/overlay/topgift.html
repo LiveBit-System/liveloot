@@ -2,6 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
+<script src="/i18n.js"></script>
 <title>LiveLoot - Top Gift</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Fredoka:wght@500;600;700&family=Noto+Sans+Hebrew:wght@400;500;700&display=swap" rel="stylesheet">
@@ -18,6 +19,7 @@
   // מומלץ ב-OBS: Browser Source ברוחב 600 וגובה 520
   const view = TopGiftView(document.body, { muted: new URLSearchParams(location.search).has('muted') });
   const socket = io(location.pathname.startsWith('/w/') ? { query: { key: location.pathname.split('/')[2] } } : undefined);
+socket.on('langChanged', () => location.reload());
   socket.on('config', c => view.setSettings(c.topGift));
   socket.on('topGift', d => view.setTop(d));
 </script>
