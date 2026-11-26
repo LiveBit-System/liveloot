@@ -304,7 +304,7 @@
           <span class="note" data-dl-meta>Windows 10 / 11 · 64-bit</span>
         </div>
         <ul class="facts" aria-label="מה מקבלים">
-          <li>בעברית</li><li>עובד עם LIVE Studio</li><li>4 מסכים</li><li>קוד פתוח</li>
+          <li data-dl-count hidden></li><li>בעברית</li><li>עובד עם LIVE Studio</li><li>קוד פתוח</li><li>יוטיוב בקרוב</li>
         </ul>
       </div>
       <div class="hero-stage">
@@ -618,6 +618,19 @@
       $$('[data-dl]').forEach(a => { if (a.getAttribute('href') !== '#start') a.href = exe.browser_download_url; });
       const mb = Math.round(exe.size / 1048576);
       $$('[data-dl-meta]').forEach(m => m.textContent = `גרסה ${rel.tag_name.replace(/^v/, '')} · Windows 10 / 11 · ${mb}MB`);
+    })
+    .catch(() => {});
+
+  // ---------- מונה הורדות: סך ההורדות של קובץ ההתקנה בכל הגרסאות, מעוגל למאות ----------
+  fetch('https://api.github.com/repos/LiveBit-System/liveloot/releases?per_page=100')
+    .then(r => r.ok ? r.json() : null)
+    .then(list => {
+      if (!Array.isArray(list)) return;
+      const n = list.reduce((t, rel) => t + (rel.assets || []).filter(a => /\.exe$/i.test(a.name)).reduce((x, a) => x + (a.download_count || 0), 0), 0);
+      if (n < 100) return;
+      const el = $('[data-dl-count]');
+      el.textContent = `${(Math.floor(n / 100) * 100).toLocaleString('he-IL')}+ הורדות`;
+      el.hidden = false;
     })
     .catch(() => {});
 
