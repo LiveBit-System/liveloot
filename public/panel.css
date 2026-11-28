@@ -708,3 +708,11 @@ html[dir="ltr"] .switch i::after { right: auto; left: 3px; }
 html[dir="ltr"] .switch input:checked + i::after { transform: translateX(20px); }
 html[dir="ltr"] .acct-txt b { text-align: start; }
 html[dir="ltr"] .feed .meta { text-align: right; }
+
+/* יוטיוב */
+.plat-dot { width: 7px; height: 7px; border-radius: 50%; background: transparent; flex: none; }
+.plat-dot[data-state="live"] { background: #3DD68C; box-shadow: 0 0 6px #3DD68C; }
+.plat-dot[data-state="connecting"] { background: var(--volt); }
+.plat-dot[data-state="error"] { background: #FF5470; }
+.yt-mark { color: #FF3B3B; font-size: 11px; }
+.tag-yt { display: inline-grid; place-items: center; width: 16px; height: 12px; margin-inline-end: 5px; border-radius: 3px; background: #FF3B3B; color: #fff; font-size: 7px; vertical-align: 1px; }

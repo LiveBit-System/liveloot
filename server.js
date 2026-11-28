@@ -127,6 +127,8 @@ const DEFAULT_BATTLE = {
   winText: '{team} ניצחו!', font: 'fredoka', sound: 'builtin:fanfare'
 };
 const DEFAULT_AUCTION = { prize: 'בוחר את המשחק הבא', durationSec: 60, snipeSec: 10, font: 'fredoka', accentColor: '#FFD23F', sound: 'builtin:fanfare' };
+// יוטיוב: אין מטבעות כמו בטיקטוק, אז Super Chat וחברויות הופכים ל"מטבעות" לפי שער
+const DEFAULT_YOUTUBE = { channel: '', coinsPerDollar: 100, memberCoins: 500, chatType: 'live' };
 const DEFAULT_CHATTTS = { enabled: false, voice: 'avri', who: 'gifters', minCoins: 1, maxLen: 120, cooldownSec: 20, blockLinks: true, banned: '', readName: true, volume: 100 };
 
 const DEFAULT_CONFIG = {
@@ -171,6 +173,7 @@ config.board = { ...DEFAULT_BOARD, ...(config.board || {}) };
 config.battle = { ...DEFAULT_BATTLE, ...(config.battle || {}) };
 config.auction = { ...DEFAULT_AUCTION, ...(config.auction || {}) };
 config.chatTts = { ...DEFAULT_CHATTTS, ...(config.chatTts || {}) };
+config.youtube = { ...DEFAULT_YOUTUBE, ...(config.youtube || {}) };
 // פעולות ואירועים: פעולה = מה קורה על המסך, אירוע = מתי זה קורה. האפקטים הישנים הופכים לפעולות + אירועים
 if (!Array.isArray(config.actions) || !Array.isArray(config.events)) {
   const old = Array.isArray(config.effects) ? config.effects : DEFAULT_EFFECTS;
@@ -802,11 +805,14 @@ if (!state.timer.started && !state.timer.remaining) state.timer.remaining = (Num
 
 // ---------- חוקים ----------
 function fill(text, evt) {
-  return String(text || '')
+  let t = String(text || '');
+  if (evt.amount) t = t.replaceAll('{gift} ×{count}', '{gift} {amount}'); // Super Chat: מראים את הסכום במקום ×1
+  return t
     .replaceAll('{name}', evt.name)
     .replaceAll('{gift}', evt.gift || '')
     .replaceAll('{count}', evt.count ?? '')
-    .replaceAll('{coins}', evt.coins ?? '');
+    .replaceAll('{coins}', evt.coins ?? '')
+    .replaceAll('{amount}', evt.amount || '');
 }
 function matchRule(rule, evt) {
   if (!rule.enabled || rule.trigger !== evt.type) return false;
@@ -1061,7 +1067,7 @@ function handleEvent(evt) {
   if (evt.type === 'follow') addFollower(evt);
   const wt = config.wheel;
   if (evt.type === 'gift') {
-    if (!evt.test) learnGift(evt);
+    if (!evt.test && evt.platform !== 'youtube') learnGift(evt);
     // מתנה מהרשימה, או כל מתנה ששווה לפחות X מטבעות
     const named = (wt.triggerGifts || []).some(g => String(g).trim().toLowerCase() === String(evt.gift).toLowerCase());
     const minC = Number(wt.minCoins) || 0, perSpin = Number(wt.coinsPerSpin) || 0, bigAt = Number(wt.bigAtCoins) || 0;
@@ -1080,6 +1086,147 @@ function handleEvent(evt) {
     if (evt.test || !followSpun.has(k)) { if (!evt.test) followSpun.add(k); spinWheel(evt); }
   }
   fireEvents(evt);
+}
+
+// ---------- חיבור ליוטיוב ----------
+// קורא את הצ'אט של הלייב בלי מפתח API (youtube-chat-next). Super Chat / Super Sticker / חברות
+// נכנסים כמו מתנה, עם "מטבעות" לפי השער בהגדרות, כדי שהגלגל, הטבלה והמשחקים יעבדו אותו דבר
+let YTChat = null;
+try {
+  ({ LiveChat: YTChat } = require('youtube-chat-next'));
+  // הספרייה לא מסמנת הצטרפות לחברות ולא מבינה חברויות במתנה, אז מוסיפים את זה מהנתונים הגולמיים
+  const yp = require('youtube-chat-next/dist/parser');
+  const orig = yp.parseChatData;
+  yp.parseChatData = data => {
+    const res = orig(data);
+    try {
+      const items = res[0];
+      const byId = new Map(items.map(i => [i.id, i]));
+      for (const a of data?.continuationContents?.liveChatContinuation?.actions || []) {
+        const it = a.addChatItemAction?.item;
+        if (!it) continue;
+        const m = it.liveChatMembershipItemRenderer;
+        if (m && byId.get(m.id)) byId.get(m.id).llKind = m.message ? 'milestone' : 'member';
+        const g = it.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer;
+        if (g) {
+          const h = g.header?.liveChatSponsorshipsHeaderRenderer || {};
+          const txt = (h.primaryText?.runs || []).map(r => r.text).join('');
+          items.push({ id: g.id, llKind: 'giftMembers', count: Number((txt.match(/\d+/) || [1])[0]) || 1,
+            author: { name: h.authorName?.simpleText || '', channelId: g.authorExternalChannelId || '', thumbnail: { url: (h.authorPhoto?.thumbnails || []).slice(-1)[0]?.url || '' } },
+            message: [], isMembership: false, timestamp: new Date() });
+        }
+      }
+    } catch (e) { console.log('[youtube] parse extra failed:', e.message); }
+    return res;
+  };
+} catch (e) { console.log('[youtube] youtube-chat-next not installed:', e.message); }
+
+// שערים בערך לדולר, כדי ש-₪20 ו-$5 ייספרו בערך אותו דבר
+const FX_TO_USD = { '$': 1, 'US$': 1, USD: 1, '₪': 0.27, ILS: 0.27, NIS: 0.27, '€': 1.08, EUR: 1.08, '£': 1.27, GBP: 1.27, 'CA$': 0.73, CAD: 0.73,
+  'A$': 0.66, AUD: 0.66, '¥': 0.0067, JPY: 0.0067, '₩': 0.00073, KRW: 0.00073, '₹': 0.012, INR: 0.012, 'R$': 0.18, BRL: 0.18, 'MX$': 0.055, MXN: 0.055,
+  '₽': 0.011, RUB: 0.011, TRY: 0.03, '₺': 0.03, PLN: 0.25, 'zł': 0.25, CHF: 1.12, SEK: 0.095, NOK: 0.093, DKK: 0.145, 'HK$': 0.13, HKD: 0.13,
+  'NT$': 0.031, TWD: 0.031, PHP: 0.017, '₱': 0.017, SGD: 0.74, 'SGD$': 0.74, NZD: 0.6, 'NZ$': 0.6, ZAR: 0.055, R: 0.055, AED: 0.27, SAR: 0.27, 'COP': 0.00025, ARS: 0.001, CLP: 0.0011 };
+function amountToUsd(text) {
+  const t = String(text || '').replace(/\u00a0/g, ' ').trim();
+  const num = t.match(/[\d.,]+/);
+  if (!num) return 0;
+  let n = num[0];
+  // 1.234,56 או 1,234.56
+  if (/,\d{2}$/.test(n) && !/\.\d{2}$/.test(n)) n = n.replace(/\./g, '').replace(',', '.'); else n = n.replace(/,/g, '');
+  const value = parseFloat(n) || 0;
+  const cur = t.replace(num[0], '').trim();
+  const rate = FX_TO_USD[cur] ?? FX_TO_USD[cur.toUpperCase()] ?? Object.entries(FX_TO_USD).find(([k]) => cur.includes(k))?.[1] ?? 1;
+  return value * rate;
+}
+function ytInput(raw) {
+  const v = String(raw || '').trim();
+  if (!v) return null;
+  let m = v.match(/(?:v=|youtu\.be\/|\/live\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+  if (m) return { liveId: m[1] };
+  m = v.match(/\/channel\/(UC[A-Za-z0-9_-]{22})/) || v.match(/^(UC[A-Za-z0-9_-]{22})$/);
+  if (m) return { channelId: m[1] };
+  m = v.match(/(?:youtube\.com\/)?(@[A-Za-z0-9._-]{3,30})/) || v.match(/^@?([A-Za-z0-9._-]{3,30})$/);
+  if (m) return { handle: m[1].startsWith('@') ? m[1] : '@' + m[1] };
+  if (/^[A-Za-z0-9_-]{11}$/.test(v)) return { liveId: v };
+  return null;
+}
+let ytChat = null;
+let ytStatus = { state: 'offline', message: 'לא מחובר', channel: config.youtube.channel };
+function setYtStatus(patch) { ytStatus = { ...ytStatus, ...patch }; io.emit('ytStatus', ytStatus); }
+async function disconnectYouTube(silent) {
+  if (ytChat) { const c = ytChat; ytChat = null; try { c.removeAllListeners(); c.on('error', () => {}); c.stop('stopped'); } catch {} }
+  if (!silent) setYtStatus({ state: 'offline', message: 'לא מחובר' });
+}
+async function connectYouTube() {
+  await disconnectYouTube(true);
+  if (!YTChat) return setYtStatus({ state: 'error', message: 'החיבור ליוטיוב לא זמין בגרסה הזאת' });
+  const id = ytInput(config.youtube.channel);
+  if (!id) return setYtStatus({ state: 'error', message: 'צריך לכתוב @שם של ערוץ ביוטיוב או קישור ללייב' });
+  const label = '⁨' + (id.handle || config.youtube.channel) + '⁩';
+  setYtStatus({ state: 'connecting', message: 'מתחבר ל-' + label + '...', channel: config.youtube.channel });
+  const chat = new YTChat(id, 3000, config.youtube.chatType === 'top' ? 'top' : 'live');
+  ytChat = chat;
+  const yc = () => config.youtube;
+  chat.on('start', liveId => {
+    if (ytChat !== chat) return;
+    console.log('[youtube] started', liveId);
+    if (liveId && liveId !== state.lastYtLive) { state.lastYtLive = liveId; if (!connection) newSession('yt:' + liveId); saveState(); }
+    setYtStatus({ state: 'live', message: 'מחובר ללייב של ' + label, liveId });
+  });
+  chat.on('chat', item => {
+    if (ytChat !== chat) return;
+    const name = item.author?.name || T('צופה');
+    const base = { platform: 'youtube', name, uid: 'yt:' + (item.author?.channelId || name), avatar: item.author?.thumbnail?.url || '' };
+    const text = (item.message || []).map(m => ('text' in m ? m.text : m.emojiText || '')).join('');
+    if (item.superchat) {
+      const usd = amountToUsd(item.superchat.amount);
+      const coins = Math.max(1, Math.round(usd * (Number(yc().coinsPerDollar) || 100)));
+      const sticker = !!item.superchat.sticker;
+      console.log(`[youtube] ${sticker ? 'super sticker' : 'super chat'} ${name} ${item.superchat.amount} = ${coins} coins`);
+      handleEvent({ ...base, type: 'gift', gift: sticker ? 'Super Sticker' : 'Super Chat', amount: item.superchat.amount, count: 1, unitCoins: coins, coins,
+        giftImage: item.superchat.sticker?.url || '', text });
+      if (text) chatFromYouTube({ ...base, text });
+      return;
+    }
+    if (item.llKind === 'member' || item.llKind === 'giftMembers') {
+      const count = item.llKind === 'giftMembers' ? Math.max(1, item.count || 1) : 1;
+      const unit = Math.max(1, Number(yc().memberCoins) || 500);
+      console.log(`[youtube] ${item.llKind} ${name} x${count}`);
+      handleEvent({ ...base, type: 'gift', gift: 'Member', count, unitCoins: unit, coins: unit * count });
+      return;
+    }
+    if (item.llKind === 'milestone') { if (text) chatFromYouTube({ ...base, text }); return; }
+    if (text) chatFromYouTube({ ...base, text });
+  });
+  chat.on('end', reason => {
+    if (ytChat !== chat) return;
+    console.log('[youtube] end', reason);
+    ytChat = null;
+    setYtStatus({ state: 'offline', message: 'הלייב הסתיים' });
+  });
+  chat.on('error', err => {
+    if (ytChat !== chat) return;
+    const name = err?.constructor?.name || err?.name || '';
+    console.log('[youtube] error', name, err?.message || err);
+    if (ytStatus.state === 'live') return; // שגיאה רגעית באמצע לייב: הספרייה מנסה שוב לבד
+    let message = 'החיבור ליוטיוב נכשל: ' + (err?.message || err);
+    if (name === 'NotLiveError' || /not.*live|live stream.*not found/i.test(err?.message || '')) message = label + ' לא בלייב כרגע. תעלה ללייב ואז תתחבר.';
+    if (name === 'RateLimitError') message = 'יוטיוב חוסם לרגע בקשות. נסה שוב בעוד דקה.';
+    setYtStatus({ state: 'error', message });
+  });
+  try {
+    const ok = await chat.start();
+    if (!ok && ytChat === chat) { ytChat = null; if (ytStatus.state !== 'error') setYtStatus({ state: 'error', message: label + ' לא בלייב כרגע. תעלה ללייב ואז תתחבר.' }); }
+  } catch (e) {
+    if (ytChat === chat) { ytChat = null; setYtStatus({ state: 'error', message: 'החיבור ליוטיוב נכשל: ' + (e?.message || e) }); }
+  }
+}
+function chatFromYouTube(base) {
+  const evt = { id: Date.now() + Math.random(), time: Date.now(), type: 'chat', ...base };
+  pushFeed(evt);
+  fireEvents(evt);
+  battleFromEvent(evt);
+  chatTtsFromEvent(evt);
 }
 
 // ---------- חיבור לטיקטוק ----------
@@ -1188,6 +1335,10 @@ async function disconnectLive(silent) {
 // ---------- אירועי בדיקה ----------
 const SAMPLE_NAMES = ['pixel.queen', 'fn.legend', 'moon_walker', 'sky.dreamer', 'night.owl', 'cool_cat'];
 const TEST = {
+  superChat: () => { const coins = Math.max(1, Math.round(amountToUsd('₪20.00') * (Number(config.youtube.coinsPerDollar) || 100)));
+    return { platform: 'youtube', type: 'gift', name: 'yt.viewer', gift: 'Super Chat', amount: '₪20.00', count: 1, unitCoins: coins, coins }; },
+  member: () => { const c = Math.max(1, Number(config.youtube.memberCoins) || 500);
+    return { platform: 'youtube', type: 'gift', name: 'new.member', gift: 'Member', count: 1, unitCoins: c, coins: c }; },
   gift: () => ({ type: 'gift', name: 'luna.live', gift: 'Rose', count: 5, unitCoins: 1, coins: 5 }),
   bigGift: () => ({ type: 'gift', name: 'big.spender', gift: 'Lion', count: 1, unitCoins: 29999, coins: 29999 }),
   follow: () => ({ type: 'follow', name: 'star.rider' }),
@@ -1231,6 +1382,9 @@ io.on('connection', socket => {
   socket.on('clearWheelHistory', () => { state.wheelHistory = []; saveState(); io.emit('wheelHistory', { list: [], room: state.lastRoomId }); });
 
   socket.on('connectLive', () => connectLive());
+  socket.emit('ytStatus', ytStatus);
+  socket.on('connectYouTube', ch => { if (typeof ch === 'string') { config.youtube.channel = ch.trim().slice(0, 200); saveConfig(); } connectYouTube(); });
+  socket.on('disconnectYouTube', () => disconnectYouTube());
   socket.on('disconnectLive', () => disconnectLive());
   socket.on('test', kind => { if (TEST[kind]) handleEvent({ ...TEST[kind](), test: true }); });
   socket.on('resetTopGift', () => resetTopGift());
@@ -1353,7 +1507,7 @@ io.on('connection', socket => {
     if (patch.wheel) patch.wheel = { ...config.wheel, ...patch.wheel };
     if (patch.topStreak) patch.topStreak = { ...config.topStreak, ...patch.topStreak };
     if (patch.timer) patch.timer = { ...config.timer, ...patch.timer };
-    for (const k of ['board', 'battle', 'auction', 'chatTts']) if (patch[k]) patch[k] = { ...config[k], ...patch[k] };
+    for (const k of ['board', 'battle', 'auction', 'chatTts', 'youtube']) if (patch[k]) patch[k] = { ...config[k], ...patch[k] };
     config = { ...config, ...patch };
     saveConfig();
     io.emit('config', config);

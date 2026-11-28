@@ -21,8 +21,8 @@
   <nav class="side" aria-label="אזורים">
     <a class="brand" href="/home" title="מסך הפתיחה"><img class="brand-logo" src="brand/logo.png" alt="LiveLoot"></a>
     <div class="platforms" role="radiogroup" aria-label="רשת חברתית">
-      <button type="button" class="plat" role="radio" aria-checked="true" data-plat="tiktok">טיקטוק</button>
-      <button type="button" class="plat" role="radio" aria-checked="false" data-plat="youtube">יוטיוב <small>בקרוב</small></button>
+      <button type="button" class="plat" role="radio" aria-checked="true" data-plat="tiktok"><i class="plat-dot" id="ttDot"></i>טיקטוק</button>
+      <button type="button" class="plat" role="radio" aria-checked="false" data-plat="youtube"><i class="plat-dot" id="ytDot"></i>יוטיוב <small>חדש</small></button>
     </div>
     <button type="button" class="acct" id="acct" title="המשתמש שלך ו-PRO">
       <span class="acct-av" id="acctAv" aria-hidden="true"></span>
@@ -103,6 +103,13 @@
     </label>
     <button type="submit" class="btn btn-primary" id="connectBtn">התחבר ללייב</button>
   </form>
+  <form class="connect" id="ytForm" hidden>
+    <label class="user yt-user" for="ytChannel">
+      <span class="at yt-mark" aria-hidden="true">▶</span>
+      <input id="ytChannel" autocomplete="off" spellcheck="false" dir="ltr" placeholder="@channel" aria-label="הערוץ שלך ביוטיוב או קישור ללייב">
+    </label>
+    <button type="submit" class="btn btn-primary" id="ytBtn">התחבר ללייב</button>
+  </form>
 
   <div class="status" id="status" data-state="offline" role="status">
     <i class="dot"></i><span id="statusText">לא מחובר</span>
@@ -150,6 +157,8 @@
               <button class="btn btn-test" data-test="follow" data-kind="follow">עוקב</button>
               <button class="btn btn-test" data-test="share" data-kind="share">שיתוף</button>
               <button class="btn btn-test" data-test="like" data-kind="like">לייקים</button>
+              <button class="btn btn-test" data-test="superChat" data-kind="big">Super Chat</button>
+              <button class="btn btn-test" data-test="member" data-kind="follow">חבר חדש ביוטיוב</button>
             </div>
           </div>
         </div>
@@ -986,6 +995,18 @@
     <!-- ===== הגדרות ===== -->
     <section class="view" data-view="prefs" hidden>
       <div class="view-head"><div><h1>הגדרות</h1></div></div>
+      <div class="panel narrow">
+        <h2>יוטיוב לייב</h2>
+        <p class="hint">ביוטיוב אין מטבעות כמו בטיקטוק. Super Chat, Super Sticker וחברות בערוץ נספרים כמתנה, לפי השער כאן, ואז הגלגל, ההתראות, הטבלה והמשחקים עובדים בדיוק כמו בטיקטוק. בחוקים ובאירועים אפשר לבחור מתנה בשם Super Chat, Super Sticker או Member.</p>
+        <form id="ytForm2">
+          <label class="field" for="ytCpd"><span>כמה מטבעות שווה דולר אחד ב-Super Chat</span><input id="ytCpd" name="coinsPerDollar" type="number" min="1" max="100000"></label>
+          <label class="field" for="ytMember"><span>כמה מטבעות שווה חברות חדשה בערוץ</span><input id="ytMember" name="memberCoins" type="number" min="1" max="100000"></label>
+          <label class="field" for="ytChatType"><span>איזה צ'אט לקרוא</span>
+            <select id="ytChatType" name="chatType"><option value="live">כל ההודעות (Live chat)</option><option value="top">רק הצ'אט המובחר (Top chat)</option></select>
+          </label>
+          <p class="hint">שקלים ומטבעות אחרים מומרים לדולר לבד, בערך. יוטיוב מעדכן את הצ'אט כל כמה שניות, אז התראות מיוטיוב מגיעות עם עיכוב קטן.</p>
+        </form>
+      </div>
       <div class="panel narrow">
         <h2>שפה</h2>
         <label class="field" for="langSel"><span>שפת הממשק</span>

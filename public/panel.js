@@ -49,8 +49,12 @@ socket.on('alert', a => alertsView.enqueue(a));
 
 // ---------- סטטוס וחיבור ----------
 socket.on('status', s => {
-  $('#status').dataset.state = s.state;
-  $('#statusText').textContent = s.message;
+  ttStatus = s;
+  $('#ttDot').dataset.state = s.state;
+  if (typeof PLAT === 'undefined' || PLAT === 'tiktok') {
+    $('#status').dataset.state = s.state;
+    $('#statusText').textContent = s.message;
+  }
   $('#viewers').textContent = fmt(s.viewers);
   $('#likes').textContent = fmt(s.likes);
   const btn = $('#connectBtn');
@@ -75,6 +79,7 @@ const FEED_ICON = {
   chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
 };
 function describe(e) {
+  if (e.type === 'gift' && e.amount) return `שלח <bdi>${lvEsc(e.gift)} ${lvEsc(e.amount)}</bdi>`;
   if (e.type === 'gift') return `שלח <bdi>${lvEsc(e.gift)} ×${e.count}</bdi>`;
   if (e.type === 'follow') return 'התחיל לעקוב';
   if (e.type === 'share') return 'שיתף את הלייב';
@@ -91,7 +96,7 @@ function feedItem(e, fresh) {
   li.innerHTML = `
     <span class="ico">${FEED_ICON[e.type] || FEED_ICON.chat}</span>
     <div>
-      <div class="who"><bdi>${lvEsc(e.name)}</bdi>${e.test ? '<span class="tag-test">בדיקה</span>' : ''}</div>
+      <div class="who">${e.platform === 'youtube' ? '<span class="tag-yt" title="יוטיוב">▶</span>' : ''}<bdi>${lvEsc(e.name)}</bdi>${e.test ? '<span class="tag-test">בדיקה</span>' : ''}</div>
       <div class="what">${describe(e)}</div>
     </div>
     <div class="meta">${e.type === 'gift' ? `<b>${fmt(e.coins)}</b>` : ''}${time}</div>`;
@@ -984,10 +989,52 @@ $('#termsDialog').addEventListener('cancel', e => e.preventDefault()); // לא �
 $('#termsCheck').addEventListener('change', e => { $('#termsOk').disabled = !e.target.checked; });
 $('#termsOk').addEventListener('click', () => socket.emit('acceptTerms'));
 
-// ---------- בורר רשתות (יוטיוב בקרוב) ----------
+// ---------- בורר רשתות: טיקטוק / יוטיוב. אפשר להיות מחובר לשניהם יחד ----------
+let PLAT = 'tiktok', ttStatus = null, ytStatusNow = null;
+try { if (localStorage.getItem('ll_plat') === 'youtube') PLAT = 'youtube'; } catch {}
+function showPlat() {
+  $$('.plat').forEach(b => b.setAttribute('aria-checked', String(b.dataset.plat === PLAT)));
+  $('#connectForm').hidden = PLAT !== 'tiktok';
+  $('#ytForm').hidden = PLAT !== 'youtube';
+  const s = PLAT === 'youtube' ? ytStatusNow : ttStatus;
+  if (s) { $('#status').dataset.state = s.state; $('#statusText').textContent = s.message; }
+}
 $$('.plat').forEach(b => b.addEventListener('click', () => {
-  if (b.dataset.plat === 'youtube') { toast('כלים ליוטיוב לייב יגיעו בעדכון הבא'); return; }
+  PLAT = b.dataset.plat;
+  try { localStorage.setItem('ll_plat', PLAT); } catch {}
+  showPlat();
 }));
+socket.on('ytStatus', s => {
+  ytStatusNow = s;
+  $('#ytDot').dataset.state = s.state;
+  const btn = $('#ytBtn');
+  btn.disabled = s.state === 'connecting';
+  btn.textContent = s.state === 'live' ? 'התנתק' : s.state === 'connecting' ? 'מתחבר...' : 'התחבר ללייב';
+  btn.classList.toggle('btn-primary', s.state !== 'live');
+  btn.dataset.live = s.state === 'live' ? '1' : '';
+  if (s.channel && document.activeElement !== $('#ytChannel')) $('#ytChannel').value = s.channel;
+  showPlat();
+});
+$('#ytForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if ($('#ytBtn').dataset.live) return socket.emit('disconnectYouTube');
+  const ch = $('#ytChannel').value.trim();
+  if (!ch) return toast('צריך לכתוב @שם של ערוץ ביוטיוב או קישור ללייב');
+  socket.emit('connectYouTube', ch);
+});
+socket.on('config', c => {
+  const y = c.youtube || {};
+  if (y.channel && !$('#ytChannel').value) $('#ytChannel').value = y.channel;
+  const f = $('#ytForm2');
+  if (f && !f.contains(document.activeElement)) { f.coinsPerDollar.value = y.coinsPerDollar ?? 100; f.memberCoins.value = y.memberCoins ?? 500; f.chatType.value = y.chatType || 'live'; }
+});
+$('#ytForm2').addEventListener('change', () => {
+  const f = $('#ytForm2');
+  socket.emit('saveConfig', { youtube: { coinsPerDollar: Math.max(1, Number(f.coinsPerDollar.value) || 100), memberCoins: Math.max(1, Number(f.memberCoins.value) || 500), chatType: f.chatType.value } });
+  toast('נשמר');
+});
+$('#ytForm2').addEventListener('submit', e => e.preventDefault());
+showPlat();
 
 // ---------- טופס כללי: ממלא, שומר ומעדכן תצוגה מקדימה ----------
 function bindSettingsForm(form, key, onPreview) {
